@@ -1,0 +1,33 @@
+# Build
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+build/
+.gradle/
+
+# Python venv
+.venv/
+
+# macOS
+.DS_Store
+*.swp
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# APKs
+*.apk
+*.aab
+
+# Devin config
+.devin/
+
+# Secrets
+*.keystore
+*.jks
+
+# RE captures (decompiled APKs, bug reports, logs, pcap)
+docs/captures/
