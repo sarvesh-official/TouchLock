@@ -1,4 +1,8 @@
-# TouchLock
+<p align="center">
+  <img src=".github/logo.png" width="120" height="120" alt="TouchLock logo">
+</p>
+
+<h1 align="center">TouchLock</h1>
 
 Lock and restore touch gestures on Realme, OnePlus, and OPPO earbuds without the vendor phone app. Solves accidental touch triggers while sleeping, lying on your side, or adjusting fit.
 
