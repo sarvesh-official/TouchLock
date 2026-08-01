@@ -1,0 +1,286 @@
+package com.sarvesh.touchlock
+
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothSocket
+import android.content.Context
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.util.UUID
+
+/**
+ * Manages Bluetooth Classic RFCOMM connection to BBK earbuds (Realme/OPPO/OnePlus).
+ *
+ * Gadgetbridge uses RFCOMM for ALL Oppo/Realme headphones (including Air 5 Pro, Air 6 Pro).
+ * No BLE GATT fallback — RFCOMM with the OPO UUID works across the entire BBK ecosystem.
+ *
+ * Tries two UUIDs and a fixed channel fallback for maximum compatibility:
+ *   1. 0000079A (primary OPO UUID — works on most devices)
+ *   2. 00001107 (alternate SPP UUID — some devices only register this)
+ *   3. Channel 15 (fixed RFCOMM channel — last resort, bypasses SDP)
+ */
+class BudsConnection(private val context: Context) {
+
+    companion object {
+        private const val TAG = "BudsConnection"
+        private val OPO_UUID: UUID = UUID.fromString(OpoProtocol.OPO_UUID)
+        private val OPO_UUID_ALT: UUID = UUID.fromString(OpoProtocol.OPO_UUID_ALT)
+        private const val FIXED_CHANNEL = 15
+    }
+
+    private var socket: BluetoothSocket? = null
+
+    /**
+     * Find all paired Bluetooth devices that are likely BBK earbuds.
+     * Returns a list ordered by likelihood (verified models first).
+     */
+    fun findBudsDevices(): List<BluetoothDevice> {
+        val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
+        val adapter: BluetoothAdapter = bluetoothManager?.adapter ?: return emptyList()
+
+        if (!adapter.isEnabled) {
+            Log.w(TAG, "Bluetooth is not enabled")
+            return emptyList()
+        }
+
+        val paired = adapter.bondedDevices
+        val keywords = listOf("realme buds", "buds air", "buds t", "enco", "oneplus", "nord buds", "oppo")
+
+        val matched = paired.filter { dev ->
+            val name = dev.name?.lowercase() ?: return@filter false
+            keywords.any { name.contains(it) }
+        }
+
+        val verified = matched.filter { dev ->
+            val name = dev.name?.lowercase() ?: ""
+            name.contains("realme buds") || name.contains("buds air") || name.contains("nord buds") || name.contains("oneplus")
+        }
+        val others = matched.filter { it !in verified }
+
+        val result = verified + others
+        result.forEach { Log.i(TAG, "Found buds device: ${it.name} (${it.address})") }
+        return result
+    }
+
+    fun findBudsDevice(): BluetoothDevice? = findBudsDevices().firstOrNull()
+
+    /**
+     * Connect to the earbuds via RFCOMM. Tries multiple UUIDs and a fixed channel.
+     * Returns true on success.
+     */
+    private fun connectWithRetry(device: BluetoothDevice, maxRetries: Int = 3): Boolean {
+        for (attempt in 1..maxRetries) {
+            // Try primary UUID
+            if (tryConnect(device, OPO_UUID, "primary UUID", attempt)) return true
+            // Try alternate UUID
+            if (tryConnect(device, OPO_UUID_ALT, "alternate UUID", attempt)) return true
+            // Try fixed channel 15 (bypasses SDP)
+            if (tryConnectChannel(device, FIXED_CHANNEL, "channel $FIXED_CHANNEL", attempt)) return true
+
+            if (attempt < maxRetries) {
+                try { Thread.sleep(500) } catch (_: InterruptedException) {}
+            }
+        }
+        Log.e(TAG, "All connect attempts failed for ${device.name}")
+        return false
+    }
+
+    private fun tryConnect(device: BluetoothDevice, uuid: UUID, label: String, attempt: Int): Boolean {
+        return try {
+            Log.i(TAG, "Connecting to ${device.name} via $label (attempt $attempt)...")
+            socket = device.createRfcommSocketToServiceRecord(uuid)
+            socket?.connect()
+            Log.i(TAG, "Connected via $label on attempt $attempt!")
+            true
+        } catch (e: IOException) {
+            Log.w(TAG, "$label attempt $attempt failed: ${e.message}")
+            try { socket?.close() } catch (_: IOException) {}
+            socket = null
+            false
+        }
+    }
+
+    private fun tryConnectChannel(device: BluetoothDevice, channel: Int, label: String, attempt: Int): Boolean {
+        return try {
+            Log.i(TAG, "Connecting to ${device.name} via $label (attempt $attempt)...")
+            val method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+            socket = method.invoke(device, channel) as BluetoothSocket
+            socket?.connect()
+            Log.i(TAG, "Connected via $label on attempt $attempt!")
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "$label attempt $attempt failed: ${e.message}")
+            try { socket?.close() } catch (_: IOException) {}
+            socket = null
+            false
+        }
+    }
+
+    /**
+     * Send a frame to the earbuds. Tries each matched device with retries.
+     * Returns the name of the device that succeeded, or null if all failed.
+     */
+    suspend fun sendFrame(frame: ByteArray): String? = withContext(Dispatchers.IO) {
+        sendFrameAndRead(frame, readTimeoutMs = 0)?.first
+    }
+
+    /**
+     * Send multiple frames sequentially (for multi-slot touch config).
+     * Reads and discards ACK responses between frames to prevent buffer overflow
+     * on devices that send responses (Air 5 Pro, Air 6 Pro).
+     * Returns the device name if all frames sent successfully, null if any failed.
+     */
+    suspend fun sendFrames(frames: List<ByteArray>): String? = withContext(Dispatchers.IO) {
+        if (frames.isEmpty()) return@withContext null
+
+        val devices = findBudsDevices()
+        if (devices.isEmpty()) {
+            Log.e(TAG, "No buds device found")
+            return@withContext null
+        }
+
+        for (device in devices) {
+            Log.i(TAG, "Trying device: ${device.name} (${device.address})")
+            if (!connectWithRetry(device)) continue
+            val out = socket?.outputStream
+            val inp = socket?.inputStream
+            if (out == null || inp == null) {
+                Log.e(TAG, "No stream for ${device.name}")
+                disconnect()
+                continue
+            }
+
+            // Drain any pending data from a previous connection
+            drainInput(inp)
+
+            var allSent = true
+            for ((i, frame) in frames.withIndex()) {
+                try {
+                    out.write(frame)
+                    out.flush()
+                    Log.i(TAG, "Sent frame ${i + 1}/${frames.size} (${frame.size} bytes): ${OpoProtocol.toHex(frame)}")
+                    // Wait for the bud to process and send ACK, then drain it
+                    Thread.sleep(100)
+                    drainInput(inp)
+                } catch (e: IOException) {
+                    Log.e(TAG, "Failed to send frame ${i + 1} to ${device.name}: ${e.message}")
+                    allSent = false
+                    break
+                }
+            }
+
+            // Wait a bit for the buds to process the last frame before disconnecting
+            Thread.sleep(150)
+            disconnect()
+            if (allSent) {
+                Log.i(TAG, "All ${frames.size} frames sent to ${device.name}")
+                return@withContext device.name
+            }
+        }
+
+        Log.e(TAG, "Failed to send all frames")
+        null
+    }
+
+    /**
+     * Read and discard any pending data from the input stream.
+     * Prevents buffer overflow on devices that send ACK responses.
+     */
+    private fun drainInput(inp: java.io.InputStream) {
+        try {
+            val buf = ByteArray(256)
+            while (inp.available() > 0) {
+                val n = inp.read(buf)
+                if (n > 0) {
+                    Log.i(TAG, "Drained $n bytes: ${OpoProtocol.toHex(buf.copyOfRange(0, n))}")
+                } else {
+                    break
+                }
+            }
+        } catch (e: IOException) {
+            Log.w(TAG, "Error draining input: ${e.message}")
+        }
+    }
+
+    /**
+     * Send a frame and optionally read a response.
+     */
+    suspend fun sendFrameAndRead(frame: ByteArray, readTimeoutMs: Long = 0): Pair<String, ByteArray>? = withContext(Dispatchers.IO) {
+        val devices = findBudsDevices()
+        if (devices.isEmpty()) {
+            Log.e(TAG, "No buds device found")
+            return@withContext null
+        }
+
+        for (device in devices) {
+            Log.i(TAG, "Trying device: ${device.name} (${device.address})")
+            if (!connectWithRetry(device)) continue
+            val out = socket?.outputStream
+            val inp = socket?.inputStream
+            if (out == null || inp == null) {
+                Log.e(TAG, "No stream for ${device.name}")
+                disconnect()
+                continue
+            }
+            try {
+                out.write(frame)
+                out.flush()
+                Log.i(TAG, "Sent ${frame.size} bytes to ${device.name}: ${OpoProtocol.toHex(frame)}")
+
+                var response = byteArrayOf()
+                if (readTimeoutMs > 0) {
+                    Log.i(TAG, "Waiting ${readTimeoutMs}ms for response...")
+                    val buf = ByteArray(256)
+                    val deadline = System.currentTimeMillis() + readTimeoutMs
+                    while (System.currentTimeMillis() < deadline) {
+                        if (inp.available() > 0) {
+                            val n = inp.read(buf)
+                            if (n > 0) {
+                                response += buf.copyOfRange(0, n)
+                                Log.i(TAG, "Read $n bytes: ${OpoProtocol.toHex(buf.copyOfRange(0, n))}")
+                            }
+                        } else {
+                            try { Thread.sleep(50) } catch (_: InterruptedException) {}
+                        }
+                    }
+                }
+                disconnect()
+                return@withContext device.name to response
+            } catch (e: IOException) {
+                Log.e(TAG, "Failed to send to ${device.name}: ${e.message}")
+                disconnect()
+                continue
+            }
+        }
+
+        Log.e(TAG, "All ${devices.size} devices failed to connect")
+        null
+    }
+
+    /**
+     * Query battery levels from the earbuds.
+     */
+    suspend fun queryBattery(): Triple<Int, Int, Int>? = withContext(Dispatchers.IO) {
+        val frame = OpoProtocol.buildBatteryRequestFrame()
+        val result = sendFrameAndRead(frame, readTimeoutMs = 3000) ?: return@withContext null
+        val (_, response) = result
+        if (response.isEmpty()) {
+            Log.i(TAG, "No battery response from buds")
+            return@withContext null
+        }
+        OpoProtocol.parseBatteryResponse(response)
+    }
+
+    fun disconnect() {
+        try {
+            socket?.close()
+        } catch (e: IOException) {
+            Log.w(TAG, "Error closing socket: ${e.message}")
+        }
+        socket = null
+        Log.i(TAG, "Disconnected")
+    }
+}
