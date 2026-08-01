@@ -32,3 +32,4 @@ build/
 # RE captures (decompiled APKs, bug reports, logs, pcap)
 docs/captures/
 __pycache__/
+android/.kotlin/
