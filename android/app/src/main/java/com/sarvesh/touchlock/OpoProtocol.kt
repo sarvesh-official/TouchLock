@@ -78,6 +78,15 @@ object OpoProtocol {
         GestureOption(GESTURE_GAME_MODE, "Game Mode"),
     )
 
+    // Supported device name patterns for auto-detection
+    val SUPPORTED_DEVICE_PATTERNS = listOf(
+        "realme buds",
+        "buds air",
+        "nord buds",
+        "oneplus",
+        "enco",
+    )
+
     private var sequenceNumber: Byte = 1
 
     /**

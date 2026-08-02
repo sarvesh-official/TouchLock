@@ -47,14 +47,10 @@ class BudsConnection(private val context: Context) {
 
         val paired = adapter.bondedDevices
 
-        // Only return verified supported brands — Realme Buds, OnePlus Buds, Nord Buds, OPPO Enco
+        // Only return verified supported brands using shared pattern list
         val supported = paired.filter { dev ->
             val name = dev.name?.lowercase() ?: return@filter false
-            name.contains("realme buds") ||
-            name.contains("buds air") ||
-            name.contains("nord buds") ||
-            name.contains("oneplus") ||
-            name.contains("enco")
+            OpoProtocol.SUPPORTED_DEVICE_PATTERNS.any { name.contains(it) }
         }
 
         supported.forEach { Log.i(TAG, "Found supported device: ${it.name} (${it.address})") }
