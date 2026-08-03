@@ -197,8 +197,17 @@ class BudsConnection(private val context: Context) {
 
     /**
      * Connect to a BluetoothSocket with a timeout.
-     * socket.connect() blocks indefinitely on some devices — this runs it on a
-     * background thread and aborts if it doesn't complete within the timeout.
+     *
+     * Android's socket.connect() can block for 5-30 seconds on unreachable devices
+     * because it waits for the full RFCOMM handshake timeout. This wrapper runs the
+     * connect call on a daemon thread and joins with a configurable timeout.
+     *
+     * If the thread is still alive after the timeout, we interrupt it and return false.
+     * The socket is then closed by the caller to release any held resources.
+     *
+     * @param socket    The BluetoothSocket to connect
+     * @param timeoutMs Maximum time to wait for connection (default 3000ms)
+     * @return true if connected successfully, false if timed out or failed
      */
     private fun connectWithTimeout(socket: BluetoothSocket, timeoutMs: Long): Boolean {
         var connected = false
