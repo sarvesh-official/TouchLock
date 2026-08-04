@@ -84,6 +84,15 @@ class BudsConnection(private val context: Context) {
     }
 
     /**
+     * Quick check if any supported earbud is currently connected.
+     * Used by the tile service and UI to show connection status without
+     * doing a full battery query.
+     */
+    fun hasConnectedDevice(): Boolean {
+        return findBudsDevicesSorted().any { isDeviceConnected(it) }
+    }
+
+    /**
      * Query battery from a specific device only.
      */
     suspend fun queryBatteryForDevice(device: BluetoothDevice): Triple<Int, Int, Int>? = withContext(Dispatchers.IO) {
