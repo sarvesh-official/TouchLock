@@ -48,6 +48,9 @@ class TouchLockTileService : TileService() {
         // If either is unlocked, lock both. If both locked, restore both.
         val newLocked = !(leftLocked && rightLocked)
 
+        Haptics.init(this)
+        Haptics.click()
+
         scope.launch {
             updateTileConnecting(newLocked)
         }
@@ -62,8 +65,10 @@ class TouchLockTileService : TileService() {
             if (deviceName != null) {
                 TouchLockState.setBothLocked(this@TouchLockTileService, newLocked)
                 TouchLockState.setLastDevice(this@TouchLockTileService, deviceName)
+                Haptics.success()
                 Log.i(TAG, "Command sent via tile → both locked=$newLocked on $deviceName")
             } else {
+                Haptics.error()
                 Log.e(TAG, "Failed to send command via tile")
             }
 

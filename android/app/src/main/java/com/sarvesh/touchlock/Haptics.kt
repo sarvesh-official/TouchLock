@@ -37,6 +37,23 @@ object Haptics {
         vibrate(35, 180)
     }
 
+    /** Double-tap pattern for successful command completion. */
+    fun success() {
+        val v = vibrator ?: return
+        if (!v.hasVibrator()) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 20, 60, 20), intArrayOf(0, 150, 0, 150), -1))
+        } else {
+            @Suppress("DEPRECATION")
+            v.vibrate(longArrayOf(0, 20, 60, 20), -1)
+        }
+    }
+
+    /** Long buzz for error/failure. */
+    fun error() {
+        vibrate(60, 200)
+    }
+
     /**
      * Heartbeat pattern — two quick pulses (thump-thump) like a heartbeat.
      * The gap between beats and the intensity scale with proximity.
