@@ -3,9 +3,9 @@ name: Build and Publish
 on:
   push:
     branches: [main]
-  # Tag pushes (v1.0.1, v1.1.0, etc.) publish to production
-  tags:
-    - "v*"
+    # Tag pushes (v1.0.1, v1.1.0, etc.) publish to production
+    tags:
+      - "v*"
 
 permissions:
   contents: write
