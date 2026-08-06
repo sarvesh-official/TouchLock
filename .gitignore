@@ -33,3 +33,7 @@ build/
 docs/captures/
 __pycache__/
 android/.kotlin/
+keystore.properties
+android/keystore/
+play-service-account.json
+android/app/play-service-account.json

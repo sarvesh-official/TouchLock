@@ -1,14 +1,18 @@
-name: Build APK
+name: Build and Publish
 
 on:
   push:
     branches: [main]
+  # Tag pushes (v1.0.1, v1.1.0, etc.) publish to production
+  tags:
+    - "v*"
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -22,23 +26,79 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build debug APK
+      - name: Decode signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/keystore/touchlock-upload.jks
+          mkdir -p android/keystore
+
+      - name: Decode Play Console service account
+        env:
+          PLAY_SERVICE_ACCOUNT_BASE64: ${{ secrets.PLAY_SERVICE_ACCOUNT_BASE64 }}
+        run: |
+          echo "$PLAY_SERVICE_ACCOUNT_BASE64" | base64 -d > android/app/play-service-account.json
+
+      - name: Create keystore.properties
+        run: |
+          cat > android/keystore.properties << 'EOF'
+          storeFile=keystore/touchlock-upload.jks
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+
+      - name: Determine publish track
+        id: track
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "track=production" >> "$GITHUB_OUTPUT"
+            echo "track_name=Production" >> "$GITHUB_OUTPUT"
+          else
+            echo "track=internal" >> "$GITHUB_OUTPUT"
+            echo "track_name=Internal Testing" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build signed AAB
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/android/keystore/touchlock-upload.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          PLAY_TRACK: ${{ steps.track.outputs.track }}
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Publish to Play Console
+        working-directory: android
+        env:
+          PLAY_TRACK: ${{ steps.track.outputs.track }}
+        run: ./gradlew publishReleaseBundle --no-daemon
 
       - name: Get short SHA
         id: sha
         run: echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Rename APK
-        run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk \
-             TouchLock-${{ steps.sha.outputs.short }}.apk
-
-      - name: Create release
+      - name: Create GitHub release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.sha.outputs.short }}
-          name: Build ${{ steps.sha.outputs.short }}
+          tag_name: ${{ github.ref_name }}
+          name: TouchLock ${{ github.ref_name }}
           generate_release_notes: true
-          files: TouchLock-${{ steps.sha.outputs.short }}.apk
+          files: android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Summary
+        run: |
+          echo "### Build & Publish Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Track:** ${{ steps.track.outputs.track_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ steps.sha.outputs.short }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **AAB:** \`android/app/build/outputs/bundle/release/app-release.aab\`" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ steps.track.outputs.track }}" == "internal" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Internal testing updates are available to testers within minutes — no review required." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Production submission will go through Google Play review (typically 1-3 days)." >> $GITHUB_STEP_SUMMARY
+          fi

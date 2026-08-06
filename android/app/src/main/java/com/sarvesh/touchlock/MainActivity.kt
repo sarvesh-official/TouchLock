@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Radar
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -65,8 +66,10 @@ class MainActivity : ComponentActivity() {
     private var isBusy by mutableStateOf(false)
     private var showSettings by mutableStateOf(false)
     private var showFindNearby by mutableStateOf(false)
+    private var showSupporter by mutableStateOf(false)
     private var isBeeping by mutableStateOf(false)
     private var beepJob: kotlinx.coroutines.Job? = null
+    private lateinit var supporterBilling: SupporterBilling
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -75,6 +78,8 @@ class MainActivity : ComponentActivity() {
         budsConnection = BudsConnection(this)
         TouchLockState.init(this)
         Haptics.init(this)
+        supporterBilling = SupporterBilling.get(this)
+        supporterBilling.startConnection()
 
         var contentReady = savedInstanceState != null
         splashScreen.setKeepOnScreenCondition { !contentReady }
@@ -96,6 +101,14 @@ class MainActivity : ComponentActivity() {
                 val deviceName by TouchLockState.deviceName.collectAsStateWithLifecycle()
                 val battery by TouchLockState.battery.collectAsStateWithLifecycle()
                 val connected by TouchLockState.connected.collectAsStateWithLifecycle()
+                val isSupporter by supporterBilling.isSupporter.collectAsStateWithLifecycle()
+
+                if (showSupporter) {
+                    SupporterSheet(
+                        billing = supporterBilling,
+                        onDismiss = { showSupporter = false },
+                    )
+                }
 
                 if (showSettings) {
                     GestureSettingsScreen(
@@ -124,6 +137,7 @@ class MainActivity : ComponentActivity() {
                         deviceName = deviceName,
                         battery = battery,
                         connected = connected,
+                        isSupporter = isSupporter,
                         onLeftTap = { toggleSide(OpoProtocol.SIDE_LEFT) },
                         onRightTap = { toggleSide(OpoProtocol.SIDE_RIGHT) },
                         onLockBoth = { setBoth(true) },
@@ -132,6 +146,7 @@ class MainActivity : ComponentActivity() {
                         onFindStopClick = { sendCommand(Command.FIND_STOP) },
                         onFindNearbyClick = { showFindNearby = true },
                         onSettingsClick = { showSettings = true },
+                        onSupporterClick = { showSupporter = true },
                         onConfirmLock = { action -> executeLock(action) },
                     )
                 }
@@ -139,6 +154,11 @@ class MainActivity : ComponentActivity() {
         }
 
         checkPermissionsAndInit()
+    }
+
+    override fun onDestroy() {
+        supporterBilling.endConnection()
+        super.onDestroy()
     }
 
     private fun checkPermissionsAndInit() {
@@ -327,6 +347,7 @@ fun TouchLockScreen(
     deviceName: String?,
     battery: TouchLockState.Battery,
     connected: Boolean,
+    isSupporter: Boolean,
     onLeftTap: () -> Unit,
     onRightTap: () -> Unit,
     onLockBoth: () -> Unit,
@@ -335,6 +356,7 @@ fun TouchLockScreen(
     onFindStopClick: () -> Unit,
     onFindNearbyClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onSupporterClick: () -> Unit,
     onConfirmLock: (MainActivity.LockAction) -> Unit,
 ) {
     val effLeftLocked = connected && leftLocked
@@ -366,6 +388,14 @@ fun TouchLockScreen(
             TopAppBar(
                 title = {},
                 actions = {
+                    IconButton(onClick = onSupporterClick) {
+                        Icon(
+                            Icons.Filled.Favorite,
+                            contentDescription = "Support",
+                            tint = if (isSupporter) MaterialTheme.colorScheme.primary
+                                   else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     IconButton(onClick = onSettingsClick) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
