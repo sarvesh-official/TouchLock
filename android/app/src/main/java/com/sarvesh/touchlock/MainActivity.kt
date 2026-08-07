@@ -100,6 +100,7 @@ class MainActivity : ComponentActivity() {
     private var showGestureSettings by mutableStateOf(false)
     private var showPrivacyPolicy by mutableStateOf(false)
     private var showFindNearby by mutableStateOf(false)
+    private var findNearbyDevice by mutableStateOf<String?>(null)
     private var showSupporter by mutableStateOf(false)
     private var showQsPrompt by mutableStateOf(false)
     private var isBeeping by mutableStateOf(false)
@@ -207,10 +208,10 @@ class MainActivity : ComponentActivity() {
                         tileAdded = tileAdded,
                     )
                 } else if (showFindNearby) {
-                    val device = budsConnection.findBudsDevice()
+                    val selectedDevice = availableDevices.find { it.address == findNearbyDevice }
                     FindNearbyScreen(
-                        deviceMac = device?.address ?: "",
-                        deviceName = deviceName,
+                        deviceMac = findNearbyDevice ?: "",
+                        deviceName = selectedDevice?.name ?: deviceName,
                         onBack = { showFindNearby = false },
                     )
                 } else {
@@ -232,7 +233,7 @@ class MainActivity : ComponentActivity() {
                         onRestoreBoth = { setBoth(false) },
                         onFindClick = { sendCommand(Command.FIND) },
                         onFindStopClick = { sendCommand(Command.FIND_STOP) },
-                        onFindNearbyClick = { showFindNearby = true },
+                        onFindNearbyClick = { addr -> findNearbyDevice = addr; showFindNearby = true },
                         onSettingsClick = { showSettings = true },
                         onSupporterClick = { showSupporter = true },
                         onConfirmLock = { action -> executeLock(action) },
@@ -526,7 +527,7 @@ fun TouchLockScreen(
     onRestoreBoth: () -> Unit,
     onFindClick: () -> Unit,
     onFindStopClick: () -> Unit,
-    onFindNearbyClick: () -> Unit,
+    onFindNearbyClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
     onSupporterClick: () -> Unit,
     onConfirmLock: (MainActivity.LockAction) -> Unit,
@@ -727,7 +728,7 @@ fun TouchLockScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            // Find Device + Find Nearby — side-by-side compact cards
+            // Find Device + Find Nearby — compact side-by-side cards
             Spacer(modifier = Modifier.height(12.dp))
             AnimatedContent(
                 targetState = isBeeping,
@@ -740,13 +741,14 @@ fun TouchLockScreen(
                     FindActionCard(
                         icon = Icons.Filled.SearchOff,
                         title = "Stop Beeping",
-                        subtitle = "Your earbuds are ringing",
                         onClick = onFindStopClick,
                         enabled = connected,
                         isDanger = true,
                         isPulsing = true,
                     )
                 } else {
+                    var locateMenuExpanded by remember { mutableStateOf(false) }
+                    val selectedAddr = TouchLockState.selectedDeviceAddress.value
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.fillMaxWidth(),
@@ -754,19 +756,85 @@ fun TouchLockScreen(
                         FindActionCard(
                             icon = Icons.Filled.GraphicEq,
                             title = "Beep",
-                            subtitle = "Play a sound",
                             onClick = onFindClick,
                             enabled = !isBusy && connected,
                             modifier = Modifier.weight(1f),
                         )
-                        FindActionCard(
-                            icon = Icons.Filled.Radar,
-                            title = "Locate",
-                            subtitle = "Find distance",
-                            onClick = onFindNearbyClick,
-                            enabled = !isBusy && connected,
-                            modifier = Modifier.weight(1f),
-                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            FindActionCard(
+                                icon = Icons.Filled.Radar,
+                                title = "Locate",
+                                onClick = { onFindNearbyClick(selectedAddr ?: "") },
+                                enabled = !isBusy && connected,
+                                trailing = if (availableDevices.size > 1) {
+                                    {
+                                        Icon(
+                                            Icons.Filled.ArrowDropDown,
+                                            contentDescription = "Select device",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                                .clickable {
+                                                    Haptics.click()
+                                                    locateMenuExpanded = true
+                                                },
+                                        )
+                                    }
+                                } else null,
+                            )
+                            if (availableDevices.size > 1) {
+                                DropdownMenu(
+                                    expanded = locateMenuExpanded,
+                                    onDismissRequest = { locateMenuExpanded = false },
+                                    modifier = Modifier
+                                        .width(280.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp)),
+                                ) {
+                                    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                                        availableDevices.forEach { dev ->
+                                            val isSelected = dev.address == selectedAddr
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(
+                                                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                                                        else Color.Transparent
+                                                    )
+                                                    .clickable {
+                                                        Haptics.click()
+                                                        onFindNearbyClick(dev.address)
+                                                        locateMenuExpanded = false
+                                                    }
+                                                    .padding(horizontal = 12.dp, vertical = 11.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Icon(
+                                                    Icons.Filled.Bluetooth,
+                                                    contentDescription = null,
+                                                    tint = if (isSelected)
+                                                        MaterialTheme.colorScheme.primary
+                                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(20.dp),
+                                                )
+                                                Spacer(modifier = Modifier.width(14.dp))
+                                                Text(
+                                                    dev.name,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                                    color = if (isSelected)
+                                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                                    else MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -896,12 +964,12 @@ fun TouchLockScreen(
 private fun FindActionCard(
     icon: ImageVector,
     title: String,
-    subtitle: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth(),
     enabled: Boolean = true,
     isDanger: Boolean = false,
     isPulsing: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -927,7 +995,6 @@ private fun FindActionCard(
                       else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     val titleColor = if (enabled) MaterialTheme.colorScheme.onSurface
                      else MaterialTheme.colorScheme.onSurfaceVariant
-    val subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     val dangerBorder = if (isDanger && isPulsing)
         MaterialTheme.colorScheme.error.copy(alpha = 0.3f + pulseAlpha * 0.4f)
@@ -948,13 +1015,13 @@ private fun FindActionCard(
                     onClick()
                 },
             )
-            .padding(14.dp),
+            .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
                 .background(
                     if (isDanger && isPulsing)
                         accentColor.copy(alpha = 0.12f + pulseAlpha * 0.1f)
@@ -967,23 +1034,26 @@ private fun FindActionCard(
                 icon,
                 contentDescription = null,
                 tint = if (enabled) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(20.dp),
             )
         }
-        Spacer(modifier = Modifier.height(10.dp))
-        Text(
-            text = title,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = titleColor,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = subtitle,
-            fontSize = 12.sp,
-            color = subtitleColor,
-            textAlign = TextAlign.Center,
-        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = title,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = titleColor,
+                textAlign = TextAlign.Center,
+            )
+            if (trailing != null) {
+                Spacer(modifier = Modifier.width(2.dp))
+                trailing()
+            }
+        }
     }
 }
 
