@@ -1,7 +1,5 @@
 package com.sarvesh.touchlock
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,6 +34,7 @@ import androidx.compose.ui.unit.sp
 fun SettingsScreen(
     onBack: () -> Unit,
     onGestureSettingsClick: () -> Unit,
+    onPrivacyPolicyClick: () -> Unit,
     onAddQsTile: () -> Unit,
     tileAdded: Boolean,
 ) {
@@ -100,10 +99,7 @@ fun SettingsScreen(
                 icon = Icons.Filled.PrivacyTip,
                 title = "Privacy Policy",
                 subtitle = "TouchLock collects no data",
-                onClick = {
-                    val url = "https://github.com/sarvesh-official/TouchLock/blob/main/docs/PRIVACY_POLICY.md"
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                },
+                onClick = onPrivacyPolicyClick,
             )
 
             SettingsRow(

@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
     private var isBusy by mutableStateOf(false)
     private var showSettings by mutableStateOf(false)
     private var showGestureSettings by mutableStateOf(false)
+    private var showPrivacyPolicy by mutableStateOf(false)
     private var showFindNearby by mutableStateOf(false)
     private var showSupporter by mutableStateOf(false)
     private var showQsPrompt by mutableStateOf(false)
@@ -137,7 +138,9 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                if (showGestureSettings) {
+                if (showPrivacyPolicy) {
+                    PrivacyPolicyScreen(onBack = { showPrivacyPolicy = false })
+                } else if (showGestureSettings) {
                     GestureSettingsScreen(
                         initialValues = GestureConfigStore.getGestureValues(this),
                         onSave = { values ->
@@ -152,6 +155,7 @@ class MainActivity : ComponentActivity() {
                     SettingsScreen(
                         onBack = { showSettings = false },
                         onGestureSettingsClick = { showGestureSettings = true },
+                        onPrivacyPolicyClick = { showPrivacyPolicy = true },
                         onAddQsTile = {
                             requestAddQsTile(this) { result ->
                                 when (result) {
