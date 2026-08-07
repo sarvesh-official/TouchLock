@@ -62,9 +62,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
@@ -928,20 +927,11 @@ fun TouchLockScreen(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Soft glowing aura behind heart — warm light breathing effect
+            // Soft heart-shaped glow — breathes with the heart
             val glowTransition = rememberInfiniteTransition(label = "heartGlow")
-            val glowRadius by glowTransition.animateFloat(
-                initialValue = 16f,
-                targetValue = 26f,
-                animationSpec = infiniteRepeatable(
-                    tween(2000, easing = EaseInOutSine),
-                    RepeatMode.Reverse,
-                ),
-                label = "glowRadius",
-            )
             val glowAlpha by glowTransition.animateFloat(
-                initialValue = 0.25f,
-                targetValue = 0.55f,
+                initialValue = 0.15f,
+                targetValue = 0.40f,
                 animationSpec = infiniteRepeatable(
                     tween(2000, easing = EaseInOutSine),
                     RepeatMode.Reverse,
@@ -963,21 +953,15 @@ fun TouchLockScreen(
                 onSupporterClick()
             }) {
                 Box(contentAlignment = Alignment.Center) {
-                    // Glowing aura behind the heart
-                    Box(
+                    // Heart-shaped glow behind the icon
+                    Icon(
+                        if (isSupporter) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = null,
+                        tint = teal.copy(alpha = glowAlpha),
                         modifier = Modifier
                             .matchParentSize()
-                            .drawBehind {
-                                drawCircle(
-                                    brush = Brush.radialGradient(
-                                        colors = listOf(
-                                            teal.copy(alpha = glowAlpha),
-                                            teal.copy(alpha = 0f),
-                                        ),
-                                        radius = glowRadius.dp.toPx(),
-                                    ),
-                                )
-                            },
+                            .scale(1.6f)
+                            .blur(8.dp),
                     )
                     // Heart icon with subtle scale
                     Icon(
