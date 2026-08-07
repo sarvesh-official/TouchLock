@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -47,31 +47,38 @@ fun TouchLockButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.97f else 1f,
+    val pressProgress by animateFloatAsState(
+        targetValue = if (isPressed) 1f else 0f,
         animationSpec = tween(80),
-        label = "pressScale",
+        label = "press",
     )
+    val scale = 1f - pressProgress * 0.03f
 
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(14.dp)
 
-    val (fillColor, textColor, highlightColor) = when (variant) {
-        ButtonVariant.PRIMARY -> Triple(
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.onPrimary,
-            Color.White.copy(alpha = 0.15f),
-        )
-        ButtonVariant.DANGER -> Triple(
-            MaterialTheme.colorScheme.error,
-            MaterialTheme.colorScheme.onError,
-            Color.White.copy(alpha = 0.15f),
-        )
+    val baseColor = when (variant) {
+        ButtonVariant.PRIMARY -> MaterialTheme.colorScheme.primary
+        ButtonVariant.DANGER -> MaterialTheme.colorScheme.error
     }
+    val onColor = when (variant) {
+        ButtonVariant.PRIMARY -> MaterialTheme.colorScheme.onPrimary
+        ButtonVariant.DANGER -> MaterialTheme.colorScheme.onError
+    }
+
+    // Gradient: lighter top → base → slightly darker bottom
+    // Press darkens the gradient slightly
+    val darken = pressProgress * 0.08f
+    val topColor = baseColor.lighten(0.12f - darken)
+    val midColor = baseColor.darken(darken)
+    val bottomColor = baseColor.darken(0.10f + darken)
+
+    val gradient = Brush.verticalGradient(
+        colors = listOf(topColor, midColor, bottomColor),
+    )
 
     val disabledFill = MaterialTheme.colorScheme.surfaceVariant
     val disabledText = MaterialTheme.colorScheme.onSurfaceVariant
-    val effectiveFill = if (enabled) fillColor else disabledFill
-    val effectiveText = if (enabled) textColor else disabledText
+    val effectiveText = if (enabled) onColor else disabledText
 
     Box(
         modifier = modifier
@@ -79,18 +86,40 @@ fun TouchLockButton(
             .height(height)
             .scale(scale)
             .clip(shape)
-            .background(effectiveFill)
+            .background(if (enabled) gradient else Brush.verticalGradient(listOf(disabledFill, disabledFill)))
             .drawWithContent {
                 drawContent()
-                // Subtle inner top highlight — suggests a curved surface
-                if (enabled) {
-                    drawLine(
-                        color = highlightColor,
-                        start = Offset(size.width * 0.15f, 1.5f),
-                        end = Offset(size.width * 0.85f, 1.5f),
-                        strokeWidth = 1.5f,
-                    )
-                }
+                if (!enabled) return@drawWithContent
+
+                // Layer 1: Inner top highlight — specular reflection
+                drawLine(
+                    color = Color.White.copy(alpha = 0.25f),
+                    start = Offset(size.width * 0.1f, 1.dp.toPx()),
+                    end = Offset(size.width * 0.9f, 1.dp.toPx()),
+                    strokeWidth = 1.5.dp.toPx(),
+                )
+
+                // Layer 2: Inner bottom shadow — ambient occlusion
+                drawLine(
+                    color = Color.Black.copy(alpha = 0.15f),
+                    start = Offset(size.width * 0.1f, size.height - 1.dp.toPx()),
+                    end = Offset(size.width * 0.9f, size.height - 1.dp.toPx()),
+                    strokeWidth = 1.dp.toPx(),
+                )
+
+                // Layer 3: Top edge specular — soft glow along the top curve
+                drawArc(
+                    color = Color.White.copy(alpha = 0.12f),
+                    startAngle = 200f,
+                    sweepAngle = 140f,
+                    useCenter = false,
+                    topLeft = Offset(0.5.dp.toPx(), 0.5.dp.toPx()),
+                    size = androidx.compose.ui.geometry.Size(
+                        size.width - 1.dp.toPx(),
+                        size.height - 1.dp.toPx(),
+                    ),
+                    style = Stroke(width = 1.dp.toPx()),
+                )
             }
             .clickable(
                 interactionSource = interactionSource,
@@ -133,39 +162,47 @@ fun TouchLockSecondaryButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.97f else 1f,
+    val pressProgress by animateFloatAsState(
+        targetValue = if (isPressed) 1f else 0f,
         animationSpec = tween(80),
-        label = "pressScale",
+        label = "press",
     )
+    val scale = 1f - pressProgress * 0.03f
 
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(14.dp)
 
-    val fillColor = MaterialTheme.colorScheme.surface
+    val surfaceColor = MaterialTheme.colorScheme.surface
     val borderColor = if (enabled) MaterialTheme.colorScheme.outline
                       else MaterialTheme.colorScheme.outlineVariant
     val textColor = if (enabled) MaterialTheme.colorScheme.onSurface
                     else MaterialTheme.colorScheme.onSurfaceVariant
-    val highlightColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+
+    // Subtle vertical gradient on surface — barely perceptible
+    val darken = pressProgress * 0.05f
+    val topColor = surfaceColor.lighten(0.04f)
+    val bottomColor = surfaceColor.darken(0.03f + darken)
+    val gradient = Brush.verticalGradient(
+        colors = listOf(topColor, surfaceColor, bottomColor),
+    )
 
     Box(
         modifier = modifier
             .height(height)
             .scale(scale)
             .clip(shape)
-            .background(fillColor)
+            .background(gradient)
             .border(BorderStroke(1.dp, borderColor), shape)
             .drawWithContent {
                 drawContent()
-                // Subtle accent-tinted top highlight
-                if (enabled) {
-                    drawLine(
-                        color = highlightColor,
-                        start = Offset(size.width * 0.2f, 1f),
-                        end = Offset(size.width * 0.8f, 1f),
-                        strokeWidth = 1f,
-                    )
-                }
+                if (!enabled) return@drawWithContent
+
+                // Inner top highlight
+                drawLine(
+                    color = Color.White.copy(alpha = 0.6f),
+                    start = Offset(size.width * 0.1f, 1.dp.toPx()),
+                    end = Offset(size.width * 0.9f, 1.dp.toPx()),
+                    strokeWidth = 1.dp.toPx(),
+                )
             }
             .clickable(
                 interactionSource = interactionSource,
@@ -195,6 +232,23 @@ fun TouchLockSecondaryButton(
             )
         }
     }
+}
+
+// Color utilities for gradient generation
+private fun Color.lighten(amount: Float): Color {
+    return copy(
+        red = (red + amount).coerceIn(0f, 1f),
+        green = (green + amount).coerceIn(0f, 1f),
+        blue = (blue + amount).coerceIn(0f, 1f),
+    )
+}
+
+private fun Color.darken(amount: Float): Color {
+    return copy(
+        red = (red - amount).coerceIn(0f, 1f),
+        green = (green - amount).coerceIn(0f, 1f),
+        blue = (blue - amount).coerceIn(0f, 1f),
+    )
 }
 
 enum class ButtonVariant { PRIMARY, DANGER }
