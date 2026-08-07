@@ -675,7 +675,7 @@ private fun RadarView(
 
 /**
  * Simple proximity label — big text, plain language.
- * Teal = close, Terracotta = far — matches warm minimalism theme.
+ * Teal = close, muted neutral = far — matches warm minimalism theme.
  */
 @Composable
 private fun ProximityLabel(rssi: Float?, maxRssi: Float, minRssi: Float) {
@@ -686,7 +686,7 @@ private fun ProximityLabel(rssi: Float?, maxRssi: Float, minRssi: Float) {
         proximity >= 0.75f -> "VERY CLOSE" to MaterialTheme.colorScheme.primary
         proximity >= 0.55f -> "CLOSE" to MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
         proximity >= 0.30f -> "NEARBY" to MaterialTheme.colorScheme.onSurfaceVariant
-        else -> "FAR AWAY" to MaterialTheme.colorScheme.error
+        else -> "FAR AWAY" to MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
     }
 
     Text(
@@ -777,16 +777,16 @@ private fun rssiToProximity(rssi: Float?, maxRssi: Float, minRssi: Float): Float
 }
 
 /**
- * Teal = close, Terracotta = far — matches warm minimalism theme.
+ * Teal = close, muted neutral = far — matches warm minimalism theme.
  */
 private fun proximityToColor(proximity: Float): Color {
     val teal = Color(0xFF5BA89A)
-    val terracotta = Color(0xFFD4634A)
+    val muted = Color(0xFF8A857E)
     return when {
         proximity >= 0.85f -> teal
         proximity >= 0.65f -> teal.copy(alpha = 0.85f)
         proximity >= 0.45f -> teal.copy(alpha = 0.6f)
-        proximity >= 0.25f -> terracotta.copy(alpha = 0.6f)
-        else -> terracotta
+        proximity >= 0.25f -> muted.copy(alpha = 0.6f)
+        else -> muted
     }
 }
