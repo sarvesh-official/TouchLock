@@ -2,7 +2,7 @@
 <resources>
 
     <!-- Base theme -->
-    <style name="Theme.TouchLock" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.BudFreeze" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
@@ -10,10 +10,10 @@
 
     <!-- Splash screen theme — dark background.
          BudsSplash (Compose) then takes over with the zoom animation. -->
-    <style name="Theme.TouchLock.Splash" parent="Theme.SplashScreen">
+    <style name="Theme.BudFreeze.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/touchlock_canvas</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_transparent</item>
-        <item name="postSplashScreenTheme">@style/Theme.TouchLock</item>
+        <item name="postSplashScreenTheme">@style/Theme.BudFreeze</item>
     </style>
 
 </resources>

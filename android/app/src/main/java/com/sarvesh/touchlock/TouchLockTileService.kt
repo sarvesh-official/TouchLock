@@ -12,7 +12,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * Quick Settings tile for Touch Lock.
+ * Quick Settings tile for BudFreeze.
  *
  * Tap to toggle: if either bud is unlocked, lock both. If both are locked, restore both.
  * The tile shows a lock icon when active (touch locked) and an open-lock icon when inactive.
@@ -132,7 +132,7 @@ class TouchLockTileService : TileService() {
         val anyLocked = leftLocked || rightLocked
 
         tile.state = if (bothLocked) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        tile.label = "Touch Lock"
+        tile.label = "BudFreeze"
         val device = TouchLockState.deviceName.value
         tile.contentDescription = when {
             bothLocked -> "Both buds locked" + (device?.let { " on $it" } ?: "")

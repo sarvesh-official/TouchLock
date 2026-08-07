@@ -11,7 +11,7 @@ import android.provider.Settings
 import java.util.function.Consumer
 
 /**
- * Requests the system to add the Touch Lock Quick Settings tile.
+ * Requests the system to add the BudFreeze Quick Settings tile.
  *
  * On Android 13+ (API 33), uses StatusBarManager.requestAddTileService()
  * which shows a native system dialog — no manual QS panel navigation needed.
@@ -29,30 +29,30 @@ fun requestAddQsTile(
             val statusBarManager = context.getSystemService(StatusBarManager::class.java)
             statusBarManager.requestAddTileService(
                 componentName,
-                "Touch Lock",
+                "BudFreeze",
                 Icon.createWithResource(context, R.drawable.ic_touch_lock),
                 context.mainExecutor,
                 Consumer { result ->
                     when (result) {
                         StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED -> {
-                            Log.d("TouchLock", "QS tile added by user")
+                            Log.d("BudFreeze", "QS tile added by user")
                             TouchLockTileService.requestListening(context)
                             onResult(TileAddResult.ADDED)
                         }
                         StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED -> {
-                            Log.d("TouchLock", "QS tile already added")
+                            Log.d("BudFreeze", "QS tile already added")
                             TouchLockTileService.requestListening(context)
                             onResult(TileAddResult.ALREADY_ADDED)
                         }
                         else -> {
-                            Log.d("TouchLock", "QS tile not added (result=$result)")
+                            Log.d("BudFreeze", "QS tile not added (result=$result)")
                             onResult(TileAddResult.CANCELLED)
                         }
                     }
                 }
             )
         } catch (e: Exception) {
-            Log.e("TouchLock", "requestAddTileService failed, falling back", e)
+            Log.e("BudFreeze", "requestAddTileService failed, falling back", e)
             openQsTileSettings(context)
             onResult(TileAddResult.FALLBACK)
         }

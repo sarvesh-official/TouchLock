@@ -22,6 +22,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseInOutSine
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -32,6 +33,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -64,14 +66,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.PI
+import kotlin.math.sin
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -803,27 +812,8 @@ fun TouchLockScreen(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Heart with soft breathing glow halo
-            // Inspired by Spotify's "glow of light and color" principle
-            val glowTransition = rememberInfiniteTransition(label = "heartGlow")
-            val glowRadius by glowTransition.animateFloat(
-                initialValue = 18f,
-                targetValue = 28f,
-                animationSpec = infiniteRepeatable(
-                    tween(2200, easing = EaseInOutSine),
-                    RepeatMode.Reverse,
-                ),
-                label = "glowRadius",
-            )
-            val glowAlpha by glowTransition.animateFloat(
-                initialValue = 0.15f,
-                targetValue = 0.35f,
-                animationSpec = infiniteRepeatable(
-                    tween(2200, easing = EaseInOutSine),
-                    RepeatMode.Reverse,
-                ),
-                label = "glowAlpha",
-            )
+            // Heart with snow-falling-inside effect
+            // Ties into the BudFreeze brand (freeze = snow/frost)
             IconButton(onClick = {
                 Haptics.click()
                 onSupporterClick()
@@ -835,31 +825,10 @@ fun TouchLockScreen(
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 } else {
-                    // Soft radial glow behind the heart icon
-                    val teal = MaterialTheme.colorScheme.primary
-                    Box(contentAlignment = Alignment.Center) {
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .drawBehind {
-                                    drawCircle(
-                                        brush = Brush.radialGradient(
-                                            colors = listOf(
-                                                teal.copy(alpha = glowAlpha),
-                                                teal.copy(alpha = 0f),
-                                            ),
-                                            radius = glowRadius.dp.toPx(),
-                                        ),
-                                    )
-                                },
-                        )
-                        Icon(
-                            Icons.Filled.FavoriteBorder,
-                            contentDescription = "Support",
-                            tint = teal,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
+                    SnowHeart(
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp),
+                    )
                 }
             }
             IconButton(onClick = {
@@ -911,6 +880,118 @@ fun TouchLockScreen(
         )
     }
 }
+
+@Composable
+private fun SnowHeart(
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    val density = LocalDensity.current
+    val heartPath = remember { Path() }
+    val snowflakes = remember {
+        List(8) { i ->
+            SnowParticle(
+                x = 0.2f + 0.6f * ((i * 37) % 100) / 100f,
+                y = 0.1f + 0.8f * ((i * 53) % 100) / 100f,
+                speed = 0.15f + 0.1f * ((i * 71) % 100) / 100f,
+                size = 1.5f + 1f * ((i * 29) % 100) / 100f,
+                drift = 0.02f * if (i % 2 == 0) 1f else -1f,
+            )
+        }
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "snowHeart")
+    val progress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            tween(4000, easing = LinearEasing),
+            RepeatMode.Restart,
+        ),
+        label = "snowProgress",
+    )
+
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 0.4f,
+        animationSpec = infiniteRepeatable(
+            tween(2200, easing = EaseInOutSine),
+            RepeatMode.Reverse,
+        ),
+        label = "glowAlpha",
+    )
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            val w = size.width
+            val h = size.height
+            val cx = w / 2f
+            val cy = h / 2f
+            val heartScale = minOf(w, h) / 24f
+
+            // Build heart path centered at (cx, cy)
+            heartPath.reset()
+            heartPath.moveTo(cx, cy + 7f * heartScale)
+            heartPath.cubicTo(
+                cx - 12f * heartScale, cy - 3f * heartScale,
+                cx - 12f * heartScale, cy - 10f * heartScale,
+                cx, cy - 4f * heartScale,
+            )
+            heartPath.cubicTo(
+                cx + 12f * heartScale, cy - 10f * heartScale,
+                cx + 12f * heartScale, cy - 3f * heartScale,
+                cx, cy + 7f * heartScale,
+            )
+            heartPath.close()
+
+            // Soft glow behind heart
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        tint.copy(alpha = glowAlpha),
+                        tint.copy(alpha = 0f),
+                    ),
+                    center = Offset(cx, cy),
+                    radius = w * 0.7f,
+                ),
+            )
+
+            // Heart outline
+            drawPath(
+                path = heartPath,
+                color = tint,
+                style = Stroke(width = 2f),
+            )
+
+            // Snowflakes falling inside heart (clipped)
+            clipPath(heartPath) {
+                snowflakes.forEach { flake ->
+                    val yPos = ((flake.y + progress * flake.speed) % 1f) * h
+                    val xPos = cx + (flake.x - 0.5f) * w * 0.6f +
+                        sin((progress + flake.y) * 2f * PI.toFloat()) * flake.drift * w
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.8f),
+                        radius = flake.size * density.density,
+                        center = Offset(xPos, yPos),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private data class SnowParticle(
+    val x: Float,
+    val y: Float,
+    val speed: Float,
+    val size: Float,
+    val drift: Float,
+)
 
 @Composable
 private fun FindActionCard(

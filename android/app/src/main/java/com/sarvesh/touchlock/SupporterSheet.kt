@@ -65,7 +65,7 @@ fun SupporterSheet(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Thank you for supporting TouchLock. Your contribution keeps this project alive.",
+                    text = "Thank you for supporting BudFreeze. Your contribution keeps this project alive.",
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -80,14 +80,14 @@ fun SupporterSheet(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Support TouchLock",
+                    text = "Support BudFreeze",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "TouchLock is free and open source. If it's made your life easier, consider supporting development with a one-time purchase.",
+                    text = "BudFreeze is free and open source. If it's made your life easier, consider supporting development with a one-time purchase.",
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

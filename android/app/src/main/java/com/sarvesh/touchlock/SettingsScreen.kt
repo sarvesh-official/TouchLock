@@ -90,7 +90,7 @@ fun SettingsScreen(
                 icon = Icons.Filled.Settings,
                 title = if (tileAdded) "Quick Settings Tile" else "Add Quick Settings Tile",
                 subtitle = if (tileAdded) "Added, toggle lock from quick settings"
-                           else "Add Touch Lock to your quick settings panel for easy access",
+                           else "Add BudFreeze to your quick settings panel for easy access",
                 trailing = if (tileAdded) {
                     { Icon(Icons.Filled.Verified, contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
@@ -106,13 +106,13 @@ fun SettingsScreen(
             SettingsRow(
                 icon = Icons.Filled.PrivacyTip,
                 title = "Privacy Policy",
-                subtitle = "TouchLock collects no data",
+                subtitle = "BudFreeze collects no data",
                 onClick = onPrivacyPolicyClick,
             )
 
             SettingsRow(
                 icon = Icons.Filled.Star,
-                title = "Support TouchLock",
+                title = "Support BudFreeze",
                 subtitle = "Become a Supporter for \$2.99",
                 onClick = onSupporterClick,
             )
@@ -122,7 +122,7 @@ fun SettingsScreen(
                 title = "Contribute",
                 subtitle = "Report issues or submit pull requests",
                 onClick = {
-                    val githubUrl = "https://github.com/sarvesh-official/TouchLock"
+                    val githubUrl = "https://github.com/sarvesh-official/BudFreeze"
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl)))
                 },
             )
