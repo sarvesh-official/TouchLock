@@ -8,7 +8,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -66,39 +65,53 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(24.dp))
 
+            SectionTitle("Overview")
+            BodyText("This Privacy Policy explains how TouchLock handles your information when you use the app. TouchLock is a utility app that lets you lock touch controls on your Realme, OnePlus, Nord, or OPPO earbuds. We built TouchLock with a simple principle: your data stays on your phone.")
+
             SectionTitle("Data We Collect")
-            BodyText("TouchLock does not collect, store, or transmit any personal data. The app operates entirely on your device. There is no server, no cloud service, no analytics, no telemetry, and no advertising SDK.")
+            BodyText("TouchLock does not collect, store, or transmit any personal or sensitive user data. There is no server, no cloud service, no analytics, no telemetry, no advertising SDK, and no tracking. The app does not create user accounts and does not require you to sign in.")
+            BodyText("The only information stored locally on your device is: your earbud lock state (whether left, right, or both buds are locked), your gesture settings (which action each tap gesture performs), and the name of the last connected earbud device. This information never leaves your device.")
 
             SectionTitle("Permissions")
-            BodyText("The permissions TouchLock requests are strictly for functionality:")
+            BodyText("TouchLock requests the following permissions, all strictly for functionality:")
             Spacer(modifier = Modifier.height(8.dp))
-            PermissionRow("BLUETOOTH_SCAN", "Discover nearby earbuds for Find Nearby")
+            PermissionRow("BLUETOOTH_SCAN", "Discover nearby supported earbuds for Find Nearby")
             PermissionRow("BLUETOOTH_CONNECT", "Send touch lock commands to your earbuds")
-            PermissionRow("VIBRATE", "Haptic feedback when toggling lock")
-            PermissionRow("BLUETOOTH (legacy)", "Bluetooth access for Android 11 and below")
+            PermissionRow("VIBRATE", "Provide haptic feedback when toggling lock")
+            PermissionRow("BLUETOOTH (legacy)", "Bluetooth access on Android 11 and below")
             Spacer(modifier = Modifier.height(8.dp))
-            BodyText("No permission is used to collect data. All Bluetooth communication is directly between your phone and your earbuds. No data leaves your device.")
+            BodyText("No permission is used to collect data. All Bluetooth communication happens directly between your phone and your earbuds. No data is sent to any server.")
 
-            SectionTitle("In-App Purchases")
-            BodyText("TouchLock offers a one-time Supporter purchase via Google Play Billing. The purchase is processed by Google Play. We receive a notification that the purchase was made to unlock the supporter badge, but we do not receive or store your payment information.")
+            SectionTitle("Third-Party Services")
+            BodyText("TouchLock uses Google Play Billing for the optional Supporter purchase. Google Play processes the transaction, and we receive a confirmation that the purchase was made to unlock the supporter badge. We do not receive or store your payment details, credit card information, or any financial data. Google's privacy policy governs the billing process.")
+            BodyText("TouchLock does not include any advertising SDKs, analytics SDKs, crash reporting SDKs, or tracking libraries.")
 
-            SectionTitle("Data Storage")
-            BodyText("Earbuds pairing info, gesture settings, and touch lock state are all stored locally on your device. Nothing is transmitted anywhere.")
+            SectionTitle("Data Security")
+            BodyText("Since TouchLock does not collect or transmit any data, there is no data at risk. All local data (lock state, gesture settings, device name) is stored in your app's private storage on your device, which is sandboxed by Android and not accessible to other apps.")
 
-            SectionTitle("Open Source")
-            BodyText("TouchLock is fully open source. You can review the complete source code at github.com/sarvesh-official/TouchLock")
+            SectionTitle("Data Sharing")
+            BodyText("TouchLock does not share any data with any third party, because there is no data to share. We do not sell, rent, or monetize any information.")
 
             SectionTitle("Children's Privacy")
-            BodyText("TouchLock is not directed at children under 13. We do not knowingly collect any data from anyone.")
+            BodyText("TouchLock is not directed at children under 13 and does not knowingly collect any data from anyone. Since the app collects no data at all, it is safe for users of all ages.")
+
+            SectionTitle("Your Rights")
+            BodyText("Since TouchLock stores no data outside your device, there is no data to access, export, or delete on a server. If you uninstall the app, all local data (lock state, gesture settings) is automatically removed by Android.")
+
+            SectionTitle("Open Source")
+            BodyText("TouchLock is fully open source. You can review the complete source code at github.com/sarvesh-official/TouchLock to verify these claims independently.")
+
+            SectionTitle("Changes to This Policy")
+            BodyText("If we ever change this Privacy Policy, we will update this page within the app and on the GitHub repository. Since TouchLock does not collect data, we do not expect any changes that would affect your privacy.")
 
             SectionTitle("Contact")
-            BodyText("For questions about this privacy policy, open an issue on the GitHub repository.")
+            BodyText("If you have questions about this Privacy Policy, you can open an issue on the GitHub repository at github.com/sarvesh-official/TouchLock.")
 
             Spacer(modifier = Modifier.height(20.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "TouchLock collects no data. Your privacy is not a feature — it's the default.",
+                text = "TouchLock collects no data. Your privacy is not a feature, it's the default.",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.primary,

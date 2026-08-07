@@ -70,7 +70,7 @@ fun GestureSettingsScreen(
                 .padding(bottom = 40.dp),
         ) {
             Text(
-                text = "Assign actions to each gesture. Applied when you tap Restore.",
+                text = "Pick what each gesture does. Changes apply when you tap Restore.",
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 20.dp),

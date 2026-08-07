@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
         if (permissions.values.all { it }) detectDevice()
     }
 
-    private var statusMessage by mutableStateOf("Tap a bud to lock it.")
+    private var statusMessage by mutableStateOf("Tap a bud to lock it")
     private var isBusy by mutableStateOf(false)
     private var showSettings by mutableStateOf(false)
     private var showGestureSettings by mutableStateOf(false)
@@ -130,13 +130,13 @@ class MainActivity : ComponentActivity() {
                         requestAddQsTile(this@MainActivity) { result ->
                             when (result) {
                                 TileAddResult.ADDED, TileAddResult.ALREADY_ADDED -> {
-                                    statusMessage = "Quick Settings tile added. Swipe down to use it."
+                                    statusMessage = "Quick Settings tile added, swipe down to use it"
                                 }
                                 TileAddResult.CANCELLED -> {
-                                    statusMessage = "You can add the tile later from Settings."
+                                    statusMessage = "You can add the tile later from Settings"
                                 }
                                 TileAddResult.FALLBACK -> {
-                                    statusMessage = "Add the Touch Lock tile from Quick Settings."
+                                    statusMessage = "Add the Touch Lock tile from Quick Settings"
                                 }
                             }
                         }
@@ -151,7 +151,7 @@ class MainActivity : ComponentActivity() {
                         onSave = { values ->
                             GestureConfigStore.setGestureValues(this, values)
                             showGestureSettings = false
-                            statusMessage = "Gestures saved."
+                            statusMessage = "Gestures saved"
                         },
                         onBack = { showGestureSettings = false },
                     )
@@ -165,10 +165,10 @@ class MainActivity : ComponentActivity() {
                             requestAddQsTile(this) { result ->
                                 when (result) {
                                     TileAddResult.ADDED, TileAddResult.ALREADY_ADDED -> {
-                                        statusMessage = "Quick Settings tile added."
+                                        statusMessage = "Quick Settings tile added"
                                     }
                                     else -> {
-                                        statusMessage = "Tile not added. You can add it from Quick Settings."
+                                        statusMessage = "Tile not added, you can add it from Quick Settings"
                                     }
                                 }
                             }
@@ -236,7 +236,7 @@ class MainActivity : ComponentActivity() {
         if (devices.isEmpty()) {
             TouchLockState.setConnected(false)
             TouchLockState.setAvailableDevices(emptyList())
-            statusMessage = "No earbuds found. Pair them in Bluetooth settings first."
+            statusMessage = "No earbuds found, pair them in Bluetooth settings first"
             return
         }
 
@@ -260,7 +260,7 @@ class MainActivity : ComponentActivity() {
                 updateStatusMessage()
             } else {
                 TouchLockState.setConnected(false)
-                statusMessage = "Earbuds paired but not responding. Make sure they're out of the case and Realme Link is force-stopped."
+                statusMessage = "Earbuds paired but not responding, make sure they're out of the case and Realme Link is force-stopped"
             }
         }
     }
@@ -277,10 +277,10 @@ class MainActivity : ComponentActivity() {
         val l = TouchLockState.leftLocked.value
         val r = TouchLockState.rightLocked.value
         statusMessage = when {
-            l && r -> "Both buds locked."
-            l -> "Left bud locked."
-            r -> "Right bud locked."
-            else -> "Tap a bud to lock it."
+            l && r -> "Both buds locked"
+            l -> "Left bud locked"
+            r -> "Right bud locked"
+            else -> "Tap a bud to lock it"
         }
     }
 
@@ -344,7 +344,7 @@ class MainActivity : ComponentActivity() {
                 if (batt != null) TouchLockState.setBattery(batt.first, batt.second, batt.third)
             } else {
                 TouchLockState.setConnected(false)
-                statusMessage = "Failed to connect. Make sure earbuds are out of the case and Realme Link is force-stopped."
+                statusMessage = "Failed to connect, make sure earbuds are out of the case and Realme Link is force-stopped"
             }
             isBusy = false
         }
@@ -375,7 +375,7 @@ class MainActivity : ComponentActivity() {
                 val frame = OpoProtocol.buildFindDeviceFrame()
                 val result = budsConnection.sendFrameAndRead(frame, readTimeoutMs = 1000)
                 if (result == null) {
-                    statusMessage = "Lost connection — stopped beeping."
+                    statusMessage = "Lost connection, stopped beeping."
                     isBeeping = false
                     break
                 }
@@ -398,7 +398,7 @@ class MainActivity : ComponentActivity() {
         budsConnection.disconnect()
         isBeeping = false
         isBusy = false
-        statusMessage = "Beep stopped."
+        statusMessage = "Beep stopped"
         // Send FIND_STOP in the background (reconnects silently, no UI blocking)
         lifecycleScope.launch {
             val frame = OpoProtocol.buildFindDeviceStopFrame()

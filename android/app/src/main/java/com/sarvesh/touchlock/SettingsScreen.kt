@@ -74,15 +74,15 @@ fun SettingsScreen(
             SettingsRow(
                 icon = Icons.Filled.TouchApp,
                 title = "Touch Controls",
-                subtitle = "Customize gesture actions for each bud",
+                subtitle = "Choose what each tap gesture does",
                 onClick = onGestureSettingsClick,
             )
 
             SettingsRow(
                 icon = Icons.Filled.Settings,
                 title = if (tileAdded) "Quick Settings Tile" else "Add Quick Settings Tile",
-                subtitle = if (tileAdded) "Added — toggle lock from quick settings"
-                           else "Add Touch Lock to your quick settings panel",
+                subtitle = if (tileAdded) "Added, toggle lock from quick settings"
+                           else "Add Touch Lock to your quick settings panel for easy access",
                 trailing = if (tileAdded) {
                     { Icon(Icons.Filled.Verified, contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
@@ -126,7 +126,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 4.dp, start = 4.dp),
             )
             Text(
-                text = "Open source — github.com/sarvesh-official/TouchLock",
+                text = "Open source, github.com/sarvesh-official/TouchLock",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),

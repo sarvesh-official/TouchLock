@@ -191,9 +191,9 @@ private fun EarbudWithRing(
             // Battery percentage in center
             Text(
                 text = when {
-                    !connected -> "--"
+                    !connected -> "N/A"
                     pct >= 0 -> "$pct%"
-                    else -> "--"
+                    else -> "N/A"
                 },
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,

@@ -108,7 +108,7 @@ fun SupporterSheet(
                     when (state) {
                         PurchaseFlowState.Idle -> {
                             TouchLockButton(
-                                text = "Become a Supporter — $price",
+                                text = "Become a Supporter, $price",
                                 onClick = {
                                     val activity = context as? android.app.Activity
                                     activity?.let { billing.launchPurchaseFlow(it) }
