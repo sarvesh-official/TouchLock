@@ -50,12 +50,12 @@ import kotlin.math.sin
  * RADAR APPROACH (inspired by SignalHound, blep.fyi, BLE Radar Ultra):
  * - User holds phone to chest and turns slowly
  * - App plots signal strength dots around a radar circle at each compass heading
- * - Stronger signal = dot closer to edge + greener color
- * - Weaker signal = dot closer to center + redder color
+ * - Stronger signal = dot closer to edge + teal color
+ * - Weaker signal = dot closer to center + terracotta color
  * - The strongest direction gets an "X" marker
  * - A rotating arrow always points toward the X relative to user's current heading
  *
- * Green = close, Red = far.
+ * Teal = close, Terracotta = far — matches the warm minimalism theme.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -395,6 +395,9 @@ private fun RadarView(
 ) {
     val proximity = rssiToProximity(rssi, maxRssi, minRssi)
     val primaryColor = proximityToColor(proximity)
+    val radarBg = MaterialTheme.colorScheme.surfaceVariant
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val themePrimary = MaterialTheme.colorScheme.primary
 
     // Pulse animation for the center circle
     val pulseScale by rememberInfiniteTransition(label = "radar").animateFloat(
@@ -445,9 +448,9 @@ private fun RadarView(
             val radius = size.minDimension / 2 - 8.dp.toPx()
             val innerRadius = radius * 0.35f
 
-            // Background circle (dark radar background)
+            // Background circle (warm surface variant, not dark violet)
             drawCircle(
-                color = Color(0xFF1A1A2E),
+                color = radarBg,
                 radius = radius,
                 center = center,
                 style = Fill,
@@ -456,7 +459,7 @@ private fun RadarView(
             // Concentric range rings
             for (i in 1..3) {
                 drawCircle(
-                    color = Color.White.copy(alpha = 0.08f),
+                    color = onSurfaceColor.copy(alpha = 0.08f),
                     radius = innerRadius + (radius - innerRadius) * (i / 4f),
                     center = center,
                     style = Stroke(width = 1.dp.toPx()),
@@ -465,13 +468,13 @@ private fun RadarView(
 
             // Cross hairs (vertical + horizontal)
             drawLine(
-                color = Color.White.copy(alpha = 0.06f),
+                color = onSurfaceColor.copy(alpha = 0.06f),
                 start = Offset(center.x - radius, center.y),
                 end = Offset(center.x + radius, center.y),
                 strokeWidth = 1.dp.toPx(),
             )
             drawLine(
-                color = Color.White.copy(alpha = 0.06f),
+                color = onSurfaceColor.copy(alpha = 0.06f),
                 start = Offset(center.x, center.y - radius),
                 end = Offset(center.x, center.y + radius),
                 strokeWidth = 1.dp.toPx(),
@@ -489,7 +492,7 @@ private fun RadarView(
                     center.y + sin(angle) * radius
                 )
                 drawLine(
-                    color = Color.White.copy(alpha = 0.15f),
+                    color = onSurfaceColor.copy(alpha = 0.15f),
                     start = start,
                     end = end,
                     strokeWidth = 1.dp.toPx(),
@@ -571,14 +574,14 @@ private fun RadarView(
 
                 // X glow
                 drawCircle(
-                    color = Color(0xFF43A047).copy(alpha = 0.3f),
+                    color = primaryColor.copy(alpha = 0.3f),
                     radius = 16.dp.toPx(),
                     center = Offset(xX, xY),
                     style = Fill,
                 )
 
                 // X lines
-                val xColor = Color(0xFF66BB6A)
+                val xColor = themePrimary
                 drawLine(
                     color = xColor,
                     start = Offset(xX - xSize, xY - xSize),
@@ -625,7 +628,7 @@ private fun RadarView(
                 text = "$pct%",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontFamily = FontFamily.Monospace,
             )
         } else {
@@ -633,7 +636,7 @@ private fun RadarView(
                 Icons.Filled.LocationOn,
                 contentDescription = null,
                 modifier = Modifier.size(28.dp),
-                tint = Color.White.copy(alpha = 0.5f),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             )
         }
 
@@ -650,7 +653,7 @@ private fun RadarView(
 
                 // Arrow shaft
                 drawLine(
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = onSurfaceColor.copy(alpha = 0.9f),
                     start = Offset(center.x, center.y - 30.dp.toPx()),
                     end = Offset(center.x, arrowHeadY + 12.dp.toPx()),
                     strokeWidth = 3.dp.toPx(),
@@ -664,7 +667,7 @@ private fun RadarView(
                     lineTo(center.x + 10.dp.toPx(), arrowHeadY + 16.dp.toPx())
                     close()
                 }
-                drawPath(path, color = Color.White, style = Fill)
+                drawPath(path, color = onSurfaceColor, style = Fill)
             }
         }
     }
@@ -672,18 +675,18 @@ private fun RadarView(
 
 /**
  * Simple proximity label — big text, plain language.
- * Green = close, Red = far.
+ * Teal = close, Terracotta = far — matches warm minimalism theme.
  */
 @Composable
 private fun ProximityLabel(rssi: Float?, maxRssi: Float, minRssi: Float) {
     val proximity = rssiToProximity(rssi, maxRssi, minRssi)
     val (text, color) = when {
         rssi == null -> "Searching..." to MaterialTheme.colorScheme.onSurfaceVariant
-        proximity >= 0.90f -> "RIGHT HERE" to Color(0xFF2E7D32)
-        proximity >= 0.75f -> "VERY CLOSE" to Color(0xFF43A047)
-        proximity >= 0.55f -> "CLOSE" to Color(0xFF7CB342)
-        proximity >= 0.30f -> "NEARBY" to Color(0xFFFDD835)
-        else -> "FAR AWAY" to Color(0xFFE53935)
+        proximity >= 0.90f -> "RIGHT HERE" to MaterialTheme.colorScheme.primary
+        proximity >= 0.75f -> "VERY CLOSE" to MaterialTheme.colorScheme.primary
+        proximity >= 0.55f -> "CLOSE" to MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+        proximity >= 0.30f -> "NEARBY" to MaterialTheme.colorScheme.onSurfaceVariant
+        else -> "FAR AWAY" to MaterialTheme.colorScheme.error
     }
 
     Text(
@@ -696,7 +699,7 @@ private fun ProximityLabel(rssi: Float?, maxRssi: Float, minRssi: Float) {
 }
 
 /**
- * Signal strength bars — like WiFi indicator. Green when full, red when empty.
+ * Signal strength bars — like WiFi indicator. Teal when full, terracotta when empty.
  */
 @Composable
 private fun SignalBars(rssi: Float?, maxRssi: Float, minRssi: Float) {
@@ -774,14 +777,16 @@ private fun rssiToProximity(rssi: Float?, maxRssi: Float, minRssi: Float): Float
 }
 
 /**
- * Green = close, Red = far.
+ * Teal = close, Terracotta = far — matches warm minimalism theme.
  */
 private fun proximityToColor(proximity: Float): Color {
+    val teal = Color(0xFF5BA89A)
+    val terracotta = Color(0xFFD4634A)
     return when {
-        proximity >= 0.85f -> Color(0xFF2E7D32) // Dark green — right here
-        proximity >= 0.65f -> Color(0xFF43A047) // Green — very close
-        proximity >= 0.45f -> Color(0xFF7CB342) // Light green — close
-        proximity >= 0.25f -> Color(0xFFFDD835) // Yellow — nearby
-        else -> Color(0xFFE53935)               // Red — far away
+        proximity >= 0.85f -> teal
+        proximity >= 0.65f -> teal.copy(alpha = 0.85f)
+        proximity >= 0.45f -> teal.copy(alpha = 0.6f)
+        proximity >= 0.25f -> terracotta.copy(alpha = 0.6f)
+        else -> terracotta
     }
 }
