@@ -21,6 +21,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -528,35 +531,59 @@ fun TouchLockScreen(
                         DropdownMenu(
                             expanded = deviceMenuExpanded,
                             onDismissRequest = { deviceMenuExpanded = false },
+                            modifier = Modifier
+                                .width(280.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp)),
                         ) {
-                            availableDevices.forEach { dev ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                Icons.Filled.Bluetooth,
-                                                contentDescription = null,
-                                                tint = if (dev.name == deviceName)
-                                                    MaterialTheme.colorScheme.primary
-                                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(18.dp),
+                            Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                                availableDevices.forEach { dev ->
+                                    val isSelected = dev.name == deviceName
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(
+                                                if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                                                else Color.Transparent
                                             )
-                                            Spacer(modifier = Modifier.width(12.dp))
-                                            Text(
-                                                dev.name,
-                                                fontSize = 14.sp,
-                                fontWeight = if (dev.name == deviceName) FontWeight.Bold else FontWeight.Normal,
-                                color = if (dev.name == deviceName)
-                                    MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface,
+                                            .clickable {
+                                                onSwitchDevice(dev.address)
+                                                deviceMenuExpanded = false
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 11.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Bluetooth,
+                                            contentDescription = null,
+                                            tint = if (isSelected)
+                                                MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                        Spacer(modifier = Modifier.width(14.dp))
+                                        Text(
+                                            dev.name,
+                                            fontSize = 14.sp,
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                            color = if (isSelected)
+                                                MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        if (isSelected) {
+                                            Icon(
+                                                Icons.Filled.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp),
                                             )
                                         }
-                                    },
-                                    onClick = {
-                                        onSwitchDevice(dev.address)
-                                        deviceMenuExpanded = false
-                                    },
-                                )
+                                    }
+                                }
                             }
                         }
                     }
