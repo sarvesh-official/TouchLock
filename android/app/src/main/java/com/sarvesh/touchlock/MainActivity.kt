@@ -987,12 +987,12 @@ private fun FindActionCard(
         MaterialTheme.colorScheme.error.copy(alpha = 0.3f + pulseAlpha * 0.4f)
     else borderColor
 
-    Column(
+    Row(
         modifier = modifier
             .scale(scale)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(surfaceColor)
-            .border(1.dp, dangerBorder, RoundedCornerShape(16.dp))
+            .border(1.dp, dangerBorder, RoundedCornerShape(14.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -1002,13 +1002,13 @@ private fun FindActionCard(
                     onClick()
                 },
             )
-            .padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .size(32.dp)
+                .clip(RoundedCornerShape(9.dp))
                 .background(
                     if (isDanger && isPulsing)
                         accentColor.copy(alpha = 0.12f + pulseAlpha * 0.1f)
@@ -1021,25 +1021,19 @@ private fun FindActionCard(
                 icon,
                 contentDescription = null,
                 tint = if (enabled) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(18.dp),
             )
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = title,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = titleColor,
-                textAlign = TextAlign.Center,
-            )
-            if (trailing != null) {
-                Spacer(modifier = Modifier.width(2.dp))
-                trailing()
-            }
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = title,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = titleColor,
+            modifier = Modifier.weight(1f),
+        )
+        if (trailing != null) {
+            trailing()
         }
     }
 }
