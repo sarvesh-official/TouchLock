@@ -47,22 +47,19 @@ class BudsConnection(private val context: Context) {
         }
 
         val paired = adapter.bondedDevices
-        val keywords = listOf("realme buds", "buds air", "buds t", "enco", "oneplus", "nord buds", "oppo")
 
-        val matched = paired.filter { dev ->
+        // Only return verified supported brands — Realme Buds, OnePlus Buds, Nord Buds, OPPO Enco
+        val supported = paired.filter { dev ->
             val name = dev.name?.lowercase() ?: return@filter false
-            keywords.any { name.contains(it) }
+            name.contains("realme buds") ||
+            name.contains("buds air") ||
+            name.contains("nord buds") ||
+            name.contains("oneplus") ||
+            name.contains("enco")
         }
 
-        val verified = matched.filter { dev ->
-            val name = dev.name?.lowercase() ?: ""
-            name.contains("realme buds") || name.contains("buds air") || name.contains("nord buds") || name.contains("oneplus")
-        }
-        val others = matched.filter { it !in verified }
-
-        val result = verified + others
-        result.forEach { Log.i(TAG, "Found buds device: ${it.name} (${it.address})") }
-        return result
+        supported.forEach { Log.i(TAG, "Found supported device: ${it.name} (${it.address})") }
+        return supported
     }
 
     fun findBudsDevice(): BluetoothDevice? = findBudsDevices().firstOrNull()

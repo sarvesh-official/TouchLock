@@ -30,6 +30,21 @@ object TouchLockState {
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
 
+    data class DeviceInfo(val name: String, val address: String)
+    private val _availableDevices = MutableStateFlow<List<DeviceInfo>>(emptyList())
+    val availableDevices: StateFlow<List<DeviceInfo>> = _availableDevices.asStateFlow()
+
+    private val _selectedDeviceAddress = MutableStateFlow<String?>(null)
+    val selectedDeviceAddress: StateFlow<String?> = _selectedDeviceAddress.asStateFlow()
+
+    fun setAvailableDevices(devices: List<DeviceInfo>) {
+        _availableDevices.value = devices
+    }
+
+    fun selectDevice(address: String) {
+        _selectedDeviceAddress.value = address
+    }
+
     data class Battery(val left: Int = -1, val right: Int = -1, val case: Int = -1)
     private val _battery = MutableStateFlow(Battery())
     val battery: StateFlow<Battery> = _battery.asStateFlow()

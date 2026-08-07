@@ -21,6 +21,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,10 +36,13 @@ import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -111,6 +115,7 @@ class MainActivity : ComponentActivity() {
                 val battery by TouchLockState.battery.collectAsStateWithLifecycle()
                 val connected by TouchLockState.connected.collectAsStateWithLifecycle()
                 val isSupporter by supporterBilling.isSupporter.collectAsStateWithLifecycle()
+                val availableDevices by TouchLockState.availableDevices.collectAsStateWithLifecycle()
 
                 if (showSupporter) {
                     SupporterSheet(
@@ -188,6 +193,8 @@ class MainActivity : ComponentActivity() {
                         battery = battery,
                         connected = connected,
                         isSupporter = isSupporter,
+                        availableDevices = availableDevices,
+                        onSwitchDevice = { addr -> switchDevice(addr) },
                         onLeftTap = { toggleSide(OpoProtocol.SIDE_LEFT) },
                         onRightTap = { toggleSide(OpoProtocol.SIDE_RIGHT) },
                         onLockBoth = { setBoth(true) },
@@ -225,29 +232,45 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun detectDevice() {
-        val device = budsConnection.findBudsDevice()
-        if (device != null) {
-            TouchLockState.setLastDevice(this, device.name)
-            lifecycleScope.launch {
-                // Query battery to verify the RFCOMM connection actually works.
-                // If it fails, the buds are paired but not connectable (Realme Link
-                // may be holding the channel, or buds are in the case).
-                val batt = budsConnection.queryBattery()
-                if (batt != null) {
-                    TouchLockState.setConnected(true)
-                    TouchLockState.setBattery(batt.first, batt.second, batt.third)
-                    updateStatusMessage()
-                } else {
-                    // Battery query failed — still paired, but can't connect right now.
-                    // Mark as connected so the UI is usable, but show a warning.
-                    TouchLockState.setConnected(true)
-                    statusMessage = "Earbuds paired but not responding. Make sure they're out of the case and Realme Link is force-stopped."
-                }
-            }
-        } else {
+        val devices = budsConnection.findBudsDevices()
+        if (devices.isEmpty()) {
             TouchLockState.setConnected(false)
+            TouchLockState.setAvailableDevices(emptyList())
             statusMessage = "No earbuds found. Pair them in Bluetooth settings first."
+            return
         }
+
+        // Populate device list for the dropdown
+        TouchLockState.setAvailableDevices(
+            devices.map { TouchLockState.DeviceInfo(it.name ?: "Unknown", it.address) }
+        )
+
+        // Use selected device if set, otherwise the first (highest priority) device
+        val selectedAddr = TouchLockState.selectedDeviceAddress.value
+        val device = devices.find { it.address == selectedAddr } ?: devices.first()
+
+        TouchLockState.setLastDevice(this, device.name)
+        TouchLockState.selectDevice(device.address)
+
+        lifecycleScope.launch {
+            val batt = budsConnection.queryBattery()
+            if (batt != null) {
+                TouchLockState.setConnected(true)
+                TouchLockState.setBattery(batt.first, batt.second, batt.third)
+                updateStatusMessage()
+            } else {
+                TouchLockState.setConnected(false)
+                statusMessage = "Earbuds paired but not responding. Make sure they're out of the case and Realme Link is force-stopped."
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun switchDevice(address: String) {
+        budsConnection.disconnect()
+        TouchLockState.setConnected(false)
+        TouchLockState.selectDevice(address)
+        detectDevice()
     }
 
     private fun updateStatusMessage() {
@@ -398,6 +421,8 @@ fun TouchLockScreen(
     battery: TouchLockState.Battery,
     connected: Boolean,
     isSupporter: Boolean,
+    availableDevices: List<TouchLockState.DeviceInfo>,
+    onSwitchDevice: (String) -> Unit,
     onLeftTap: () -> Unit,
     onRightTap: () -> Unit,
     onLockBoth: () -> Unit,
@@ -451,7 +476,7 @@ fun TouchLockScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                     actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
             )
@@ -466,15 +491,76 @@ fun TouchLockScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Device name
+            // Device name — tappable dropdown if multiple devices
             if (deviceName != null) {
-                Text(
-                    text = deviceName,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 0.5.sp,
-                )
+                var deviceMenuExpanded by remember { mutableStateOf(false) }
+                Box {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .then(
+                                if (availableDevices.size > 1)
+                                    Modifier.clip(RoundedCornerShape(12.dp))
+                                        .clickable { deviceMenuExpanded = true }
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                else Modifier.padding(horizontal = 8.dp)
+                            ),
+                    ) {
+                        Text(
+                            text = deviceName,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (availableDevices.size > 1) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                Icons.Filled.ArrowDropDown,
+                                contentDescription = "Select device",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    }
+                    if (availableDevices.size > 1) {
+                        DropdownMenu(
+                            expanded = deviceMenuExpanded,
+                            onDismissRequest = { deviceMenuExpanded = false },
+                        ) {
+                            availableDevices.forEach { dev ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                Icons.Filled.Bluetooth,
+                                                contentDescription = null,
+                                                tint = if (dev.name == deviceName)
+                                                    MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Text(
+                                                dev.name,
+                                                fontSize = 14.sp,
+                                fontWeight = if (dev.name == deviceName) FontWeight.Bold else FontWeight.Normal,
+                                color = if (dev.name == deviceName)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface,
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        onSwitchDevice(dev.address)
+                                        deviceMenuExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             // Connection status chip
