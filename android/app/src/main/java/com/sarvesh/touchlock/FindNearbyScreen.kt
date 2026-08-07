@@ -324,29 +324,18 @@ fun FindNearbyScreen(
                         )
                     }
                 } else {
-                    Button(
+                    TouchLockButton(
+                        text = if (radarSamples.isEmpty()) "Start Sweep" else "Sweep Again",
                         onClick = {
                             radarSamples.clear()
                             strongestRssi = Int.MIN_VALUE
                             strongestDirection = 0f
                             isSweeping = true
                         },
-                        modifier = Modifier.fillMaxWidth().height(46.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp),
-                    ) {
-                        Icon(
-                            Icons.Filled.Radar,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            if (radarSamples.isEmpty()) "Start Sweep" else "Sweep Again",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
+                        icon = Icons.Filled.Radar,
+                        modifier = Modifier.fillMaxWidth(),
+                        height = 46.dp,
+                    )
                 }
             }
 

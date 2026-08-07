@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
     private var statusMessage by mutableStateOf("Tap a bud to lock it.")
     private var isBusy by mutableStateOf(false)
     private var showSettings by mutableStateOf(false)
+    private var showGestureSettings by mutableStateOf(false)
     private var showFindNearby by mutableStateOf(false)
     private var showSupporter by mutableStateOf(false)
     private var showQsPrompt by mutableStateOf(false)
@@ -136,16 +137,21 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                if (showSettings) {
-                    val tileAdded = remember { TouchLockTileService.isTileAdded(this) }
+                if (showGestureSettings) {
                     GestureSettingsScreen(
                         initialValues = GestureConfigStore.getGestureValues(this),
                         onSave = { values ->
                             GestureConfigStore.setGestureValues(this, values)
-                            showSettings = false
+                            showGestureSettings = false
                             statusMessage = "Gestures saved."
                         },
+                        onBack = { showGestureSettings = false },
+                    )
+                } else if (showSettings) {
+                    val tileAdded = remember { TouchLockTileService.isTileAdded(this) }
+                    SettingsScreen(
                         onBack = { showSettings = false },
+                        onGestureSettingsClick = { showGestureSettings = true },
                         onAddQsTile = {
                             requestAddQsTile(this) { result ->
                                 when (result) {
@@ -516,7 +522,7 @@ fun TouchLockScreen(
             Spacer(modifier = Modifier.height(20.dp))
             val btnText = if (effBothLocked) "Restore Both" else "Lock Both"
             val btnIcon = if (effBothLocked) Icons.Filled.LockOpen else Icons.Filled.Lock
-            val btnVariant = if (effBothLocked) ButtonVariant.PRIMARY else ButtonVariant.DANGER
+            val btnVariant = if (effBothLocked) ButtonVariant.PRIMARY else ButtonVariant.SECURE
             TouchLockButton(
                 text = btnText,
                 onClick = { handleBothClick() },
@@ -623,7 +629,7 @@ fun TouchLockScreen(
                         pendingLock = null
                     }
                 ) {
-                    Text("LOCK", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text("LOCK", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -647,8 +653,8 @@ private fun ConnectionChip(
 ) {
     val (text, color, container) = when {
         !connected -> Triple("Disconnected", MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
-        bothLocked -> Triple("Both Locked", MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.errorContainer)
-        leftLocked || rightLocked -> Triple("Locked", MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.errorContainer)
+        bothLocked -> Triple("Both Locked", MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.surfaceVariant)
+        leftLocked || rightLocked -> Triple("Locked", MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.surfaceVariant)
         else -> Triple("Active", MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
     }
     Surface(
@@ -736,7 +742,7 @@ private fun ControlRow(
                 if (locked) Icons.Filled.Lock else Icons.Filled.LockOpen,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = if (locked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (locked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column {
@@ -748,7 +754,7 @@ private fun ControlRow(
                 Text(
                     text = if (!enabled) "Unavailable" else if (locked) "Locked" else "Unlocked",
                     fontSize = 12.sp,
-                    color = if (locked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (locked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -758,7 +764,7 @@ private fun ControlRow(
             enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.surface,
-                checkedTrackColor = MaterialTheme.colorScheme.error,
+                checkedTrackColor = MaterialTheme.colorScheme.onSurface,
                 uncheckedThumbColor = MaterialTheme.colorScheme.surface,
                 uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
             ),

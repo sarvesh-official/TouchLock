@@ -57,10 +57,12 @@ fun TouchLockButton(
     val baseColor = when (variant) {
         ButtonVariant.PRIMARY -> MaterialTheme.colorScheme.primary
         ButtonVariant.DANGER -> MaterialTheme.colorScheme.error
+        ButtonVariant.SECURE -> MaterialTheme.colorScheme.onSurface
     }
     val onColor = when (variant) {
         ButtonVariant.PRIMARY -> MaterialTheme.colorScheme.onPrimary
         ButtonVariant.DANGER -> MaterialTheme.colorScheme.onError
+        ButtonVariant.SECURE -> MaterialTheme.colorScheme.surface
     }
 
     // Vertical gradient: lighter top → base → darker bottom = curved surface
@@ -235,4 +237,4 @@ private fun Color.darken(amount: Float): Color = copy(
     blue = (blue - amount).coerceIn(0f, 1f),
 )
 
-enum class ButtonVariant { PRIMARY, DANGER }
+enum class ButtonVariant { PRIMARY, DANGER, SECURE }

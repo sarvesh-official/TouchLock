@@ -96,7 +96,7 @@ private fun EarbudWithRing(
 
     // Smooth color transition for the percentage text
     val accentColor = when {
-        locked -> MaterialTheme.colorScheme.error
+        locked -> MaterialTheme.colorScheme.onSurface
         !connected -> MaterialTheme.colorScheme.outline
         pct < 0 -> MaterialTheme.colorScheme.outline
         pct <= 20 -> Color(0xFFE85252)
@@ -105,7 +105,7 @@ private fun EarbudWithRing(
     }
 
     val iconColor = if (!connected) MaterialTheme.colorScheme.outline
-        else if (locked) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+        else if (locked) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         else MaterialTheme.colorScheme.onSurface
 
     val outlineColor = MaterialTheme.colorScheme.outline
@@ -233,7 +233,7 @@ private fun EarbudWithRing(
                         imageVector = Icons.Filled.Lock,
                         contentDescription = "Locked",
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.error,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
