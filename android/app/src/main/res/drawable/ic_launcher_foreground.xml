@@ -15,9 +15,9 @@
         android:fillColor="#E0E0E0"
         android:pathData="M42,26 m-7,0 a7,7 0,1 0,14 0 a7,7 0,1 0,-14 0" />
 
-    <!-- Lock badge background (brand green) -->
+    <!-- Lock badge background (brand teal) -->
     <path
-        android:fillColor="#8FDE73"
+        android:fillColor="#5BA89A"
         android:pathData="M70,68 m-16,0 a16,16 0,1 0,32 0 a16,16 0,1 0,-32 0" />
 
     <!-- Lock icon (dark, scaled from 24x24 padlock) -->
