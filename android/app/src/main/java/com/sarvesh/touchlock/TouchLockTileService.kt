@@ -21,6 +21,8 @@ class TouchLockTileService : TileService() {
 
     companion object {
         private const val TAG = "TouchLockTile"
+        private const val PREFS_QS = "qs_prompt"
+        private const val KEY_TILE_ADDED = "tile_added"
 
         fun requestListening(context: android.content.Context) {
             requestListeningState(
@@ -28,9 +30,47 @@ class TouchLockTileService : TileService() {
                 ComponentName(context, TouchLockTileService::class.java)
             )
         }
+
+        fun isTileAdded(context: android.content.Context): Boolean {
+            return context.getSharedPreferences(PREFS_QS, android.content.Context.MODE_PRIVATE)
+                .getBoolean(KEY_TILE_ADDED, false)
+        }
+
+        fun setTileAdded(context: android.content.Context, added: Boolean) {
+            context.getSharedPreferences(PREFS_QS, android.content.Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(KEY_TILE_ADDED, added)
+                .apply()
+        }
+
+        fun shouldShowQsPrompt(context: android.content.Context): Boolean {
+            val prefs = context.getSharedPreferences(PREFS_QS, android.content.Context.MODE_PRIVATE)
+            return !prefs.getBoolean(KEY_QS_PROMPT_SHOWN, false) && !prefs.getBoolean(KEY_TILE_ADDED, false)
+        }
+
+        fun markQsPromptShown(context: android.content.Context) {
+            context.getSharedPreferences(PREFS_QS, android.content.Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(KEY_QS_PROMPT_SHOWN, true)
+                .apply()
+        }
+
+        private const val KEY_QS_PROMPT_SHOWN = "qs_prompt_shown"
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onTileAdded() {
+        super.onTileAdded()
+        Log.d(TAG, "Tile added by user")
+        setTileAdded(this, true)
+    }
+
+    override fun onTileRemoved() {
+        super.onTileRemoved()
+        Log.d(TAG, "Tile removed by user")
+        setTileAdded(this, false)
+    }
 
     override fun onStartListening() {
         super.onStartListening()

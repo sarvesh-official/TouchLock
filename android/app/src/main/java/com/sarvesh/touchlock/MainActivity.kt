@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
     private var showSettings by mutableStateOf(false)
     private var showFindNearby by mutableStateOf(false)
     private var showSupporter by mutableStateOf(false)
+    private var showQsPrompt by mutableStateOf(false)
     private var isBeeping by mutableStateOf(false)
     private var beepJob: kotlinx.coroutines.Job? = null
     private lateinit var supporterBilling: SupporterBilling
@@ -89,7 +90,13 @@ class MainActivity : ComponentActivity() {
                 var showSplash by remember { mutableStateOf(savedInstanceState == null) }
 
                 if (showSplash) {
-                    BudsSplash(onFinished = { showSplash = false })
+                    BudsSplash(onFinished = {
+                        showSplash = false
+                        if (TouchLockTileService.shouldShowQsPrompt(this@MainActivity)) {
+                            TouchLockTileService.markQsPromptShown(this@MainActivity)
+                            showQsPrompt = true
+                        }
+                    })
                     LaunchedEffect(Unit) { contentReady = true }
                     return@TouchLockAppTheme
                 }
@@ -110,7 +117,27 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                if (showQsPrompt) {
+                    LaunchedEffect(Unit) {
+                        showQsPrompt = false
+                        requestAddQsTile(this@MainActivity) { result ->
+                            when (result) {
+                                TileAddResult.ADDED, TileAddResult.ALREADY_ADDED -> {
+                                    statusMessage = "Quick Settings tile added. Swipe down to use it."
+                                }
+                                TileAddResult.CANCELLED -> {
+                                    statusMessage = "You can add the tile later from Settings."
+                                }
+                                TileAddResult.FALLBACK -> {
+                                    statusMessage = "Add the Touch Lock tile from Quick Settings."
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (showSettings) {
+                    val tileAdded = remember { TouchLockTileService.isTileAdded(this) }
                     GestureSettingsScreen(
                         initialValues = GestureConfigStore.getGestureValues(this),
                         onSave = { values ->
@@ -119,6 +146,19 @@ class MainActivity : ComponentActivity() {
                             statusMessage = "Gestures saved."
                         },
                         onBack = { showSettings = false },
+                        onAddQsTile = {
+                            requestAddQsTile(this) { result ->
+                                when (result) {
+                                    TileAddResult.ADDED, TileAddResult.ALREADY_ADDED -> {
+                                        statusMessage = "Quick Settings tile added."
+                                    }
+                                    else -> {
+                                        statusMessage = "Tile not added. You can add it from Quick Settings."
+                                    }
+                                }
+                            }
+                        },
+                        tileAdded = tileAdded,
                     )
                 } else if (showFindNearby) {
                     val device = budsConnection.findBudsDevice()

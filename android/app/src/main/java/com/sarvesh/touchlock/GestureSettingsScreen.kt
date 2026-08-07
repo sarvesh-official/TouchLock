@@ -1,15 +1,22 @@
 package com.sarvesh.touchlock
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -21,6 +28,8 @@ fun GestureSettingsScreen(
     initialValues: List<Int>,
     onSave: (List<Int>) -> Unit,
     onBack: () -> Unit,
+    onAddQsTile: () -> Unit = {},
+    tileAdded: Boolean = false,
 ) {
     val gestures = remember { mutableStateListOf<Int>().apply { addAll(initialValues) } }
     val scrollState = rememberScrollState()
@@ -73,6 +82,66 @@ fun GestureSettingsScreen(
                     selectedCode = gestures[index],
                     onSelected = { code -> gestures[index] = code },
                 )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Quick Settings tile section
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "QUICK SETTINGS",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 1.sp,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(if (tileAdded) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+                    .border(
+                        1.dp,
+                        if (tileAdded) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant,
+                        RoundedCornerShape(16.dp),
+                    )
+                    .then(if (!tileAdded) Modifier.clickable { onAddQsTile() } else Modifier)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (tileAdded) "Quick Tile added" else "Add Quick Tile",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = if (tileAdded) "Toggle touch lock from the quick settings panel"
+                        else "Add Touch Lock to your quick settings panel",
+                        fontSize = 12.sp,
+                        color = if (tileAdded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (tileAdded) {
+                    Icon(
+                        Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                } else {
+                    Icon(
+                        Icons.Filled.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
