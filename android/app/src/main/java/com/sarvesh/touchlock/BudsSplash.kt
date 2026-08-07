@@ -17,7 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
@@ -42,7 +43,10 @@ fun BudsSplash(onFinished: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            painter = painterResource(id = R.mipmap.ic_launcher),
+            bitmap = android.graphics.BitmapFactory.decodeResource(
+                LocalContext.current.resources,
+                R.drawable.splash_logo,
+            ).asImageBitmap(),
             contentDescription = null,
             modifier = Modifier
                 .size(140.dp)
