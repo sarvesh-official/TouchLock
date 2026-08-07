@@ -62,7 +62,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
@@ -800,46 +802,63 @@ fun TouchLockScreen(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Animated heart — subtle teal glow pulse to attract attention
-            // Inspired by Spotify's heart micro-interaction
-            val heartTransition = rememberInfiniteTransition(label = "heart")
-            val heartScale by heartTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 1.12f,
+            // Heart with soft breathing glow halo
+            // Inspired by Spotify's "glow of light and color" principle
+            val glowTransition = rememberInfiniteTransition(label = "heartGlow")
+            val glowRadius by glowTransition.animateFloat(
+                initialValue = 18f,
+                targetValue = 28f,
                 animationSpec = infiniteRepeatable(
-                    tween(1200, easing = EaseInOutSine),
+                    tween(2200, easing = EaseInOutSine),
                     RepeatMode.Reverse,
                 ),
-                label = "heartScale",
+                label = "glowRadius",
             )
-            val heartAlpha by heartTransition.animateFloat(
-                initialValue = 0.5f,
-                targetValue = 1f,
+            val glowAlpha by glowTransition.animateFloat(
+                initialValue = 0.15f,
+                targetValue = 0.35f,
                 animationSpec = infiniteRepeatable(
-                    tween(1200, easing = EaseInOutSine),
+                    tween(2200, easing = EaseInOutSine),
                     RepeatMode.Reverse,
                 ),
-                label = "heartAlpha",
+                label = "glowAlpha",
             )
             IconButton(onClick = {
                 Haptics.click()
                 onSupporterClick()
             }) {
                 if (isSupporter) {
-                    // Solid teal heart, no animation — already supported
                     Icon(
                         Icons.Filled.Favorite,
                         contentDescription = "Support",
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 } else {
-                    // Pulsing teal glow to invite the tap
-                    Icon(
-                        Icons.Filled.FavoriteBorder,
-                        contentDescription = "Support",
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = heartAlpha),
-                        modifier = Modifier.scale(heartScale),
-                    )
+                    // Soft radial glow behind the heart icon
+                    val teal = MaterialTheme.colorScheme.primary
+                    Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .drawBehind {
+                                    drawCircle(
+                                        brush = Brush.radialGradient(
+                                            colors = listOf(
+                                                teal.copy(alpha = glowAlpha),
+                                                teal.copy(alpha = 0f),
+                                            ),
+                                            radius = glowRadius.dp.toPx(),
+                                        ),
+                                    )
+                                },
+                        )
+                        Icon(
+                            Icons.Filled.FavoriteBorder,
+                            contentDescription = "Support",
+                            tint = teal,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
                 }
             }
             IconButton(onClick = {
