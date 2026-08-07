@@ -522,7 +522,7 @@ fun TouchLockScreen(
             Spacer(modifier = Modifier.height(20.dp))
             val btnText = if (effBothLocked) "Restore Both" else "Lock Both"
             val btnIcon = if (effBothLocked) Icons.Filled.LockOpen else Icons.Filled.Lock
-            val btnVariant = if (effBothLocked) ButtonVariant.PRIMARY else ButtonVariant.SECURE
+            val btnVariant = ButtonVariant.PRIMARY
             TouchLockButton(
                 text = btnText,
                 onClick = { handleBothClick() },
