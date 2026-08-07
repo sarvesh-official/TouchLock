@@ -200,6 +200,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         },
+                        onSupporterClick = { showSupporter = true },
                         tileAdded = tileAdded,
                     )
                 } else if (showFindNearby) {

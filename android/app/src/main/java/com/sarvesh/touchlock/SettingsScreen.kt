@@ -40,6 +40,7 @@ fun SettingsScreen(
     onGestureSettingsClick: () -> Unit,
     onPrivacyPolicyClick: () -> Unit,
     onAddQsTile: () -> Unit,
+    onSupporterClick: () -> Unit,
     tileAdded: Boolean,
 ) {
     val context = LocalContext.current
@@ -113,7 +114,7 @@ fun SettingsScreen(
                 icon = Icons.Filled.Star,
                 title = "Support TouchLock",
                 subtitle = "Become a Supporter for \$2.99",
-                onClick = { },
+                onClick = onSupporterClick,
             )
 
             SettingsRow(
