@@ -33,7 +33,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -57,7 +56,6 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -66,23 +64,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.PI
-import kotlin.math.sin
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -735,7 +724,7 @@ fun TouchLockScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            // Find Device + Find Nearby — premium action cards
+            // Find Device + Find Nearby — side-by-side compact cards
             Spacer(modifier = Modifier.height(12.dp))
             AnimatedContent(
                 targetState = isBeeping,
@@ -755,20 +744,25 @@ fun TouchLockScreen(
                         isPulsing = true,
                     )
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         FindActionCard(
                             icon = Icons.Filled.GraphicEq,
                             title = "Beep",
-                            subtitle = "Play a sound on your earbuds",
+                            subtitle = "Play a sound",
                             onClick = onFindClick,
                             enabled = !isBusy && connected,
+                            modifier = Modifier.weight(1f),
                         )
                         FindActionCard(
                             icon = Icons.Filled.Radar,
                             title = "Locate",
-                            subtitle = "Find how close your earbuds are",
+                            subtitle = "Find distance",
                             onClick = onFindNearbyClick,
                             enabled = !isBusy && connected,
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -814,24 +808,15 @@ fun TouchLockScreen(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Heart with snow-falling-inside effect
-            // Ties into the BudFreeze brand (freeze = snow/frost)
             IconButton(onClick = {
                 Haptics.click()
                 onSupporterClick()
             }) {
-                if (isSupporter) {
-                    Icon(
-                        Icons.Filled.Favorite,
-                        contentDescription = "Support",
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                } else {
-                    SnowHeart(
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
+                Icon(
+                    if (isSupporter) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = "Support",
+                    tint = MaterialTheme.colorScheme.primary,
+                )
             }
             IconButton(onClick = {
                 Haptics.click()
@@ -884,119 +869,12 @@ fun TouchLockScreen(
 }
 
 @Composable
-private fun SnowHeart(
-    tint: Color,
-    modifier: Modifier = Modifier,
-) {
-    val density = LocalDensity.current
-    val snowflakes = remember {
-        List(6) { i ->
-            SnowParticle(
-                x = 0.15f + 0.7f * ((i * 37) % 100) / 100f,
-                y = 0.1f + 0.8f * ((i * 53) % 100) / 100f,
-                speed = 0.12f + 0.08f * ((i * 71) % 100) / 100f,
-                size = 1.2f + 0.8f * ((i * 29) % 100) / 100f,
-                drift = 0.015f * if (i % 2 == 0) 1f else -1f,
-            )
-        }
-    }
-
-    val infiniteTransition = rememberInfiniteTransition(label = "snowHeart")
-    val progress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(4000, easing = LinearEasing),
-            RepeatMode.Restart,
-        ),
-        label = "snowProgress",
-    )
-
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.15f,
-        targetValue = 0.3f,
-        animationSpec = infiniteRepeatable(
-            tween(2200, easing = EaseInOutSine),
-            RepeatMode.Reverse,
-        ),
-        label = "glowAlpha",
-    )
-
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            val w = size.width
-            val h = size.height
-            val s = minOf(w, h) / 24f
-            val ox = (w - 24f * s) / 2f
-            val oy = (h - 24f * s) / 2f
-
-            // Material Icons Favorite path (24x24 viewport)
-            val heartPath = Path().apply {
-                moveTo(12f * s + ox, 21f * s + oy)
-                cubicTo(10.55f * s + ox, 19.68f * s + oy, 5.4f * s + ox, 15.04f * s + oy, 5.4f * s + ox, 9.5f * s + oy)
-                cubicTo(5.4f * s + ox, 6.42f * s + oy, 7.82f * s + ox, 4f * s + oy, 10.9f * s + ox, 4f * s + oy)
-                cubicTo(12.64f * s + ox, 4f * s + oy, 14.31f * s + ox, 4.81f * s + oy, 15.4f * s + ox, 6.09f * s + oy)
-                cubicTo(16.49f * s + ox, 4.81f * s + oy, 18.16f * s + ox, 4f * s + oy, 19.9f * s + ox, 4f * s + oy)
-                cubicTo(22.98f * s + ox, 4f * s + oy, 25.4f * s + ox, 6.42f * s + oy, 25.4f * s + ox, 9.5f * s + oy)
-                cubicTo(25.4f * s + ox, 15.04f * s + oy, 20.25f * s + ox, 19.68f * s + oy, 18.8f * s + ox, 21f * s + oy)
-                close()
-            }
-
-            // Soft glow behind heart
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        tint.copy(alpha = glowAlpha),
-                        tint.copy(alpha = 0f),
-                    ),
-                    center = Offset(w / 2f, h / 2f),
-                    radius = w * 0.65f,
-                ),
-            )
-
-            // Heart outline
-            drawPath(
-                path = heartPath,
-                color = tint,
-                style = Stroke(width = 2.5f * density.density, cap = StrokeCap.Round, join = StrokeJoin.Round),
-            )
-
-            // Snowflakes falling inside heart (clipped)
-            clipPath(heartPath) {
-                snowflakes.forEach { flake ->
-                    val yPos = ((flake.y + progress * flake.speed) % 1f) * h
-                    val xPos = w / 2f + (flake.x - 0.5f) * w * 0.5f +
-                        sin((progress + flake.y) * 2f * PI.toFloat()) * flake.drift * w
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.85f),
-                        radius = flake.size * density.density,
-                        center = Offset(xPos, yPos),
-                    )
-                }
-            }
-        }
-    }
-}
-
-private data class SnowParticle(
-    val x: Float,
-    val y: Float,
-    val speed: Float,
-    val size: Float,
-    val drift: Float,
-)
-
-@Composable
 private fun FindActionCard(
     icon: ImageVector,
     title: String,
     subtitle: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth(),
     enabled: Boolean = true,
     isDanger: Boolean = false,
     isPulsing: Boolean = false,
@@ -1031,9 +909,8 @@ private fun FindActionCard(
         MaterialTheme.colorScheme.error.copy(alpha = 0.3f + pulseAlpha * 0.4f)
     else borderColor
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
+    Column(
+        modifier = modifier
             .scale(scale)
             .clip(RoundedCornerShape(16.dp))
             .background(surfaceColor)
@@ -1047,12 +924,12 @@ private fun FindActionCard(
                     onClick()
                 },
             )
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(40.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(
                     if (isDanger && isPulsing)
@@ -1069,28 +946,20 @@ private fun FindActionCard(
                 modifier = Modifier.size(22.dp),
             )
         }
-        Spacer(modifier = Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = titleColor,
-            )
-            Text(
-                text = subtitle,
-                fontSize = 13.sp,
-                color = subtitleColor,
-            )
-        }
-        if (enabled) {
-            Icon(
-                Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(22.dp),
-            )
-        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = titleColor,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = subtitle,
+            fontSize = 12.sp,
+            color = subtitleColor,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
