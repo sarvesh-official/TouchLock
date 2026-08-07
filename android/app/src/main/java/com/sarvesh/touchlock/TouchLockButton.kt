@@ -174,15 +174,15 @@ fun TouchLockSecondaryButton(
         colors = listOf(topColor, surfaceColor, bottomColor),
     )
 
-    // Top highlight — softer for secondary
+    // Top highlight — very subtle for secondary (white cast on light surface is too strong)
     val secDensity = LocalDensity.current
     val secHeightPx = with(secDensity) { height.toPx() }
     val highlightGradient = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.5f),
+            Color.White.copy(alpha = 0.12f),
             Color.White.copy(alpha = 0.0f),
         ),
-        endY = secHeightPx * 0.4f,
+        endY = secHeightPx * 0.3f,
     )
 
     Box(
