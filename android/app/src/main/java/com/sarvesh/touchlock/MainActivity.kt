@@ -21,10 +21,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.EaseInOutSine
-import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -879,23 +876,13 @@ fun TouchLockScreen(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Heartbeat pulse — mimics a real "lub-dub" heartbeat
+            // Subtle breathing pulse — gentle, not distracting
             val heartBeat by rememberInfiniteTransition(label = "heart").animateFloat(
                 initialValue = 1f,
-                targetValue = 1f,
+                targetValue = 1.08f,
                 animationSpec = infiniteRepeatable(
-                    animation = keyframes {
-                        durationMillis = 1200
-                        // Lub — quick scale up
-                        1f at 0 with EaseOut
-                        1.25f at 120 with EaseOut
-                        1f at 240 with EaseInOut
-                        // Dub — slightly smaller second beat
-                        1.18f at 360 with EaseOut
-                        1f at 480 with EaseInOut
-                        // Rest until next cycle
-                        1f at 1200
-                    },
+                    tween(2400, easing = EaseInOutSine),
+                    RepeatMode.Reverse,
                 ),
                 label = "heartBeat",
             )
