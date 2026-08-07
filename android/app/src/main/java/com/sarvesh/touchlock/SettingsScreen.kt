@@ -1,5 +1,7 @@
 package com.sarvesh.touchlock
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,7 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -126,13 +133,35 @@ fun SettingsScreen(
                 text = version,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            val githubUrl = "https://github.com/sarvesh-official/TouchLock"
+            val linkColor = MaterialTheme.colorScheme.primary
+            val annotatedLink = buildAnnotatedString {
+                append("Open source, ")
+                withStyle(
+                    SpanStyle(
+                        color = linkColor,
+                        textDecoration = TextDecoration.Underline,
+                        fontWeight = FontWeight.Medium,
+                    )
+                ) {
+                    append("github.com/sarvesh-official/TouchLock")
+                }
+            }
             Text(
-                text = "Open source, github.com/sarvesh-official/TouchLock",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                text = annotatedLink,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .clickable {
+                        Haptics.click()
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl)))
+                    },
             )
         }
     }
