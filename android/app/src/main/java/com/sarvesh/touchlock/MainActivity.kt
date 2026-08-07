@@ -516,26 +516,15 @@ fun TouchLockScreen(
             Spacer(modifier = Modifier.height(20.dp))
             val btnText = if (effBothLocked) "Restore Both" else "Lock Both"
             val btnIcon = if (effBothLocked) Icons.Filled.LockOpen else Icons.Filled.Lock
-            val btnColor = if (effBothLocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-            val btnContainer = if (effBothLocked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
-            Button(
+            val btnVariant = if (effBothLocked) ButtonVariant.PRIMARY else ButtonVariant.DANGER
+            TouchLockButton(
+                text = btnText,
                 onClick = { handleBothClick() },
                 enabled = !isBusy && connected,
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = btnContainer,
-                    contentColor = btnColor,
-                ),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 0.dp,
-                ),
-            ) {
-                Icon(btnIcon, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(btnText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-            }
+                variant = btnVariant,
+                icon = btnIcon,
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             // Find Device + Find Nearby — side by side as a row
             Spacer(modifier = Modifier.height(12.dp))
@@ -547,51 +536,34 @@ fun TouchLockScreen(
                 label = "findButton",
             ) { beeping ->
                 if (beeping) {
-                    Button(
+                    TouchLockButton(
+                        text = "Stop Beeping",
                         onClick = onFindStopClick,
                         enabled = connected,
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 0.dp,
-                            pressedElevation = 0.dp,
-                        ),
-                    ) {
-                        Icon(Icons.Filled.SearchOff, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text("Stop Beeping", fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    }
+                        variant = ButtonVariant.DANGER,
+                        icon = Icons.Filled.SearchOff,
+                        modifier = Modifier.fillMaxWidth(),
+                        height = 48.dp,
+                    )
                 } else {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        // Find Device (beep)
-                        OutlinedButton(
+                        TouchLockSecondaryButton(
+                            text = "Beep",
                             onClick = onFindClick,
                             enabled = !isBusy && connected,
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Beep", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        }
-                        // Find Nearby (radar)
-                        OutlinedButton(
+                            icon = Icons.Filled.Search,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TouchLockSecondaryButton(
+                            text = "Locate",
                             onClick = onFindNearbyClick,
                             enabled = !isBusy && connected,
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            Icon(Icons.Filled.Radar, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Locate", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        }
+                            icon = Icons.Filled.Radar,
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
             }
@@ -642,7 +614,7 @@ fun TouchLockScreen(
         }
         AlertDialog(
             onDismissRequest = { pendingLock = null },
-            title = { Text(title, fontWeight = FontWeight.SemiBold) },
+            title = { Text(title, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp) },
             text = { Text(message, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(
@@ -651,12 +623,12 @@ fun TouchLockScreen(
                         pendingLock = null
                     }
                 ) {
-                    Text("Lock", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text("LOCK", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingLock = null }) {
-                    Text("Cancel")
+                    Text("CANCEL", fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,

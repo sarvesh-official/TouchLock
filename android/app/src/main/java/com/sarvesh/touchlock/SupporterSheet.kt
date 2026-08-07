@@ -107,24 +107,14 @@ fun SupporterSheet(
                 ) { state ->
                     when (state) {
                         PurchaseFlowState.Idle -> {
-                            Button(
+                            TouchLockButton(
+                                text = "Become a Supporter — $price",
                                 onClick = {
                                     val activity = context as? android.app.Activity
                                     activity?.let { billing.launchPurchaseFlow(it) }
                                 },
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.primary,
-                                ),
-                            ) {
-                                Text(
-                                    "Become a Supporter — $price",
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
+                                modifier = Modifier.fillMaxWidth(),
+                            )
                         }
                         PurchaseFlowState.Success -> {
                             Text(

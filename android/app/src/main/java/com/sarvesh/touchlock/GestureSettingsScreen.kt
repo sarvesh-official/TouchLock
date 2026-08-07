@@ -146,14 +146,12 @@ fun GestureSettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
+            TouchLockButton(
+                text = "Save Gestures",
                 onClick = { onSave(gestures.toList()) },
+                icon = Icons.Filled.Check,
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Save Gestures", fontWeight = FontWeight.SemiBold)
-            }
+            )
         }
     }
 }
