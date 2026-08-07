@@ -65,6 +65,79 @@ class BudsConnection(private val context: Context) {
     fun findBudsDevice(): BluetoothDevice? = findBudsDevices().firstOrNull()
 
     /**
+     * Check if a Bluetooth device is currently connected (not just paired).
+     * Uses reflection to access the hidden isConnected() method.
+     */
+    fun isDeviceConnected(device: BluetoothDevice): Boolean {
+        return try {
+            val method = device.javaClass.getMethod("isConnected")
+            method.invoke(device) as Boolean
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Find supported earbuds, sorted with connected devices first.
+     */
+    fun findBudsDevicesSorted(): List<BluetoothDevice> {
+        val devices = findBudsDevices()
+        val (connected, disconnected) = devices.partition { isDeviceConnected(it) }
+        connected.forEach { Log.i(TAG, "CONNECTED: ${it.name} (${it.address})") }
+        disconnected.forEach { Log.i(TAG, "Paired but not connected: ${it.name} (${it.address})") }
+        return connected + disconnected
+    }
+
+    /**
+     * Query battery from a specific device only.
+     */
+    suspend fun queryBatteryForDevice(device: BluetoothDevice): Triple<Int, Int, Int>? = withContext(Dispatchers.IO) {
+        Log.i(TAG, "Querying battery for specific device: ${device.name} (${device.address})")
+        if (!connectWithRetry(device)) {
+            Log.e(TAG, "Failed to connect to ${device.name}")
+            return@withContext null
+        }
+        val out = socket?.outputStream
+        val inp = socket?.inputStream
+        if (out == null || inp == null) {
+            Log.e(TAG, "No stream for ${device.name}")
+            disconnect()
+            return@withContext null
+        }
+        try {
+            val frame = OpoProtocol.buildBatteryRequestFrame()
+            out.write(frame)
+            out.flush()
+            Log.i(TAG, "Sent battery request to ${device.name}")
+
+            val buf = ByteArray(256)
+            var response = byteArrayOf()
+            val deadline = System.currentTimeMillis() + 3000
+            while (System.currentTimeMillis() < deadline) {
+                if (inp.available() > 0) {
+                    val n = inp.read(buf)
+                    if (n > 0) {
+                        response += buf.copyOfRange(0, n)
+                        Log.i(TAG, "Read $n bytes: ${OpoProtocol.toHex(buf.copyOfRange(0, n))}")
+                    }
+                } else {
+                    try { Thread.sleep(50) } catch (_: InterruptedException) {}
+                }
+            }
+            disconnect()
+            if (response.isEmpty()) {
+                Log.i(TAG, "No battery response from ${device.name}")
+                return@withContext null
+            }
+            OpoProtocol.parseBatteryResponse(response)
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to query battery from ${device.name}: ${e.message}")
+            disconnect()
+            null
+        }
+    }
+
+    /**
      * Connect to the earbuds via RFCOMM. Tries multiple UUIDs and a fixed channel.
      * Returns true on success.
      */

@@ -237,7 +237,7 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun detectDevice() {
-        val devices = budsConnection.findBudsDevices()
+        val devices = budsConnection.findBudsDevicesSorted()
         if (devices.isEmpty()) {
             TouchLockState.setConnected(false)
             TouchLockState.setAvailableDevices(emptyList())
@@ -245,20 +245,26 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        // Populate device list for the dropdown
+        // Populate device list for the dropdown (connected devices first)
         TouchLockState.setAvailableDevices(
             devices.map { TouchLockState.DeviceInfo(it.name ?: "Unknown", it.address) }
         )
 
-        // Use selected device if set, otherwise the first (highest priority) device
+        // Pick the device: if user previously selected one, use it.
+        // Otherwise, prefer the first connected device.
         val selectedAddr = TouchLockState.selectedDeviceAddress.value
-        val device = devices.find { it.address == selectedAddr } ?: devices.first()
+        val device = if (selectedAddr != null) {
+            devices.find { it.address == selectedAddr } ?: devices.first()
+        } else {
+            devices.first()
+        }
 
         TouchLockState.setLastDevice(this, device.name)
         TouchLockState.selectDevice(device.address)
 
         lifecycleScope.launch {
-            val batt = budsConnection.queryBattery()
+            // Query battery for THIS specific device only
+            val batt = budsConnection.queryBatteryForDevice(device)
             if (batt != null) {
                 TouchLockState.setConnected(true)
                 TouchLockState.setBattery(batt.first, batt.second, batt.third)
