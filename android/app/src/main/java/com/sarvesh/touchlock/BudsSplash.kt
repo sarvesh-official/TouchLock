@@ -38,7 +38,7 @@ fun BudsSplash(onFinished: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF000000))
+            .background(Color(0xFF0E0E0E))
             .graphicsLayer { alpha = fadeOut.value },
         contentAlignment = Alignment.Center,
     ) {
