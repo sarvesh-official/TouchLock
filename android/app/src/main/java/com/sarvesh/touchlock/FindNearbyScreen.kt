@@ -232,7 +232,10 @@ fun FindNearbyScreen(
             TopAppBar(
                 title = { Text("Find Nearby", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        Haptics.click()
+                        onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },

@@ -49,7 +49,10 @@ fun GestureSettingsScreen(
             TopAppBar(
                 title = { Text("Touch Controls", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        Haptics.click()
+                        onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -180,7 +183,10 @@ private fun GestureSlot(
                 .clip(RoundedCornerShape(14.dp))
                 .background(MaterialTheme.colorScheme.surface)
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
-                .clickable { expanded = true }
+                .clickable {
+                    Haptics.click()
+                    expanded = true
+                }
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -235,6 +241,7 @@ private fun GestureSlot(
                                 else Color.Transparent
                             )
                             .clickable {
+                                Haptics.click()
                                 onSelected(option.code)
                                 expanded = false
                             }

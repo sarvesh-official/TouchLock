@@ -112,7 +112,10 @@ private fun EarbudWithRing(
 
     Column(
         modifier = modifier
-            .clickable(enabled = connected) { onTap() }
+            .clickable(enabled = connected) {
+                Haptics.click()
+                onTap()
+            }
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

@@ -23,7 +23,10 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             TopAppBar(
                 title = { Text("Privacy Policy", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        Haptics.click()
+                        onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },

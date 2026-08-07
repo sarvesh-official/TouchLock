@@ -46,7 +46,10 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        Haptics.click()
+                        onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -161,7 +164,10 @@ private fun SettingsRow(
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .clickable {
+                Haptics.click()
+                onClick()
+            }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

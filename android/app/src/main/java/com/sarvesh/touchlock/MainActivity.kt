@@ -494,7 +494,10 @@ fun TouchLockScreen(
                             .then(
                                 if (availableDevices.size > 1)
                                     Modifier.clip(RoundedCornerShape(12.dp))
-                                        .clickable { deviceMenuExpanded = true }
+                                        .clickable {
+                                            Haptics.click()
+                                            deviceMenuExpanded = true
+                                        }
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                 else Modifier.padding(horizontal = 8.dp)
                             ),
@@ -538,6 +541,7 @@ fun TouchLockScreen(
                                                 else Color.Transparent
                                             )
                                             .clickable {
+                                                Haptics.click()
                                                 onSwitchDevice(dev.address)
                                                 deviceMenuExpanded = false
                                             }
@@ -719,7 +723,10 @@ fun TouchLockScreen(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onSupporterClick) {
+            IconButton(onClick = {
+                Haptics.click()
+                onSupporterClick()
+            }) {
                 Icon(
                     Icons.Filled.Favorite,
                     contentDescription = "Support",
@@ -727,7 +734,10 @@ fun TouchLockScreen(
                            else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            IconButton(onClick = onSettingsClick) {
+            IconButton(onClick = {
+                Haptics.click()
+                onSettingsClick()
+            }) {
                 Icon(Icons.Filled.Settings, contentDescription = "Settings")
             }
         }
