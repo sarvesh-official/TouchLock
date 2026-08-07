@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -241,6 +242,7 @@ private fun AccentColorPicker(
     onSupporterClick: () -> Unit,
 ) {
     var unlocked by remember { mutableStateOf(isSupporter) }
+    val isDark = isSystemInDarkTheme()
 
     Column(
         modifier = Modifier
@@ -286,7 +288,7 @@ private fun AccentColorPicker(
                             .weight(1f)
                             .height(40.dp)
                             .clip(CircleShape)
-                            .background(color.dark)
+                            .background(if (isDark) color.dark else color.light)
                             .border(
                                 if (isSelected) 3.dp else 1.dp,
                                 if (isSelected) MaterialTheme.colorScheme.onSurface
