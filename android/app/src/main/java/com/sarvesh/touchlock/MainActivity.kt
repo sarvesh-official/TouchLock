@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Check
@@ -46,6 +47,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -723,22 +725,57 @@ fun TouchLockScreen(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Animated heart — subtle teal glow pulse to attract attention
+            // Inspired by Spotify's heart micro-interaction
+            val heartTransition = rememberInfiniteTransition(label = "heart")
+            val heartScale by heartTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.12f,
+                animationSpec = infiniteRepeatable(
+                    tween(1200, easing = EaseInOutSine),
+                    RepeatMode.Reverse,
+                ),
+                label = "heartScale",
+            )
+            val heartAlpha by heartTransition.animateFloat(
+                initialValue = 0.5f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    tween(1200, easing = EaseInOutSine),
+                    RepeatMode.Reverse,
+                ),
+                label = "heartAlpha",
+            )
             IconButton(onClick = {
                 Haptics.click()
                 onSupporterClick()
             }) {
-                Icon(
-                    Icons.Filled.Favorite,
-                    contentDescription = "Support",
-                    tint = if (isSupporter) MaterialTheme.colorScheme.primary
-                           else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (isSupporter) {
+                    // Solid teal heart, no animation — already supported
+                    Icon(
+                        Icons.Filled.Favorite,
+                        contentDescription = "Support",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                } else {
+                    // Pulsing teal glow to invite the tap
+                    Icon(
+                        Icons.Filled.FavoriteBorder,
+                        contentDescription = "Support",
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = heartAlpha),
+                        modifier = Modifier.scale(heartScale),
+                    )
+                }
             }
             IconButton(onClick = {
                 Haptics.click()
                 onSettingsClick()
             }) {
-                Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                Icon(
+                    Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
