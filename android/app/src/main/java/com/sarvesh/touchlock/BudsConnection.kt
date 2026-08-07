@@ -27,7 +27,6 @@ class BudsConnection(private val context: Context) {
     companion object {
         private const val TAG = "BudsConnection"
         private val OPO_UUID: UUID = UUID.fromString(OpoProtocol.OPO_UUID)
-        private val OPO_UUID_ALT: UUID = UUID.fromString(OpoProtocol.OPO_UUID_ALT)
         private const val FIXED_CHANNEL = 15
     }
 
@@ -141,17 +140,15 @@ class BudsConnection(private val context: Context) {
      * Connect to the earbuds via RFCOMM. Tries multiple UUIDs and a fixed channel.
      * Returns true on success.
      */
-    private fun connectWithRetry(device: BluetoothDevice, maxRetries: Int = 3): Boolean {
+    private fun connectWithRetry(device: BluetoothDevice, maxRetries: Int = 2): Boolean {
         for (attempt in 1..maxRetries) {
             // Try primary UUID
             if (tryConnect(device, OPO_UUID, "primary UUID", attempt)) return true
-            // Try alternate UUID
-            if (tryConnect(device, OPO_UUID_ALT, "alternate UUID", attempt)) return true
-            // Try fixed channel 15 (bypasses SDP)
+            // Try fixed channel 15 (bypasses SDP) — faster than alternate UUID
             if (tryConnectChannel(device, FIXED_CHANNEL, "channel $FIXED_CHANNEL", attempt)) return true
 
             if (attempt < maxRetries) {
-                try { Thread.sleep(500) } catch (_: InterruptedException) {}
+                try { Thread.sleep(200) } catch (_: InterruptedException) {}
             }
         }
         Log.e(TAG, "All connect attempts failed for ${device.name}")
@@ -162,9 +159,16 @@ class BudsConnection(private val context: Context) {
         return try {
             Log.i(TAG, "Connecting to ${device.name} via $label (attempt $attempt)...")
             socket = device.createRfcommSocketToServiceRecord(uuid)
-            socket?.connect()
-            Log.i(TAG, "Connected via $label on attempt $attempt!")
-            true
+            // Connect with a timeout — don't block for 5+ seconds on unreachable devices
+            val connected = connectWithTimeout(socket!!, timeoutMs = 3000)
+            if (connected) {
+                Log.i(TAG, "Connected via $label on attempt $attempt!")
+                true
+            } else {
+                try { socket?.close() } catch (_: IOException) {}
+                socket = null
+                false
+            }
         } catch (e: IOException) {
             Log.w(TAG, "$label attempt $attempt failed: ${e.message}")
             try { socket?.close() } catch (_: IOException) {}
@@ -178,15 +182,47 @@ class BudsConnection(private val context: Context) {
             Log.i(TAG, "Connecting to ${device.name} via $label (attempt $attempt)...")
             val method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
             socket = method.invoke(device, channel) as BluetoothSocket
-            socket?.connect()
-            Log.i(TAG, "Connected via $label on attempt $attempt!")
-            true
+            val connected = connectWithTimeout(socket!!, timeoutMs = 3000)
+            if (connected) {
+                Log.i(TAG, "Connected via $label on attempt $attempt!")
+                true
+            } else {
+                try { socket?.close() } catch (_: IOException) {}
+                socket = null
+                false
+            }
         } catch (e: Exception) {
             Log.w(TAG, "$label attempt $attempt failed: ${e.message}")
             try { socket?.close() } catch (_: IOException) {}
             socket = null
             false
         }
+    }
+
+    /**
+     * Connect to a BluetoothSocket with a timeout.
+     * socket.connect() blocks indefinitely on some devices — this runs it on a
+     * background thread and aborts if it doesn't complete within the timeout.
+     */
+    private fun connectWithTimeout(socket: BluetoothSocket, timeoutMs: Long): Boolean {
+        var connected = false
+        val thread = Thread {
+            try {
+                socket.connect()
+                connected = true
+            } catch (e: IOException) {
+                Log.w(TAG, "Socket connect failed: ${e.message}")
+            }
+        }
+        thread.isDaemon = true
+        thread.start()
+        thread.join(timeoutMs)
+        if (thread.isAlive) {
+            thread.interrupt()
+            Log.w(TAG, "Socket connect timed out after ${timeoutMs}ms")
+            return false
+        }
+        return connected
     }
 
     /**
@@ -206,13 +242,20 @@ class BudsConnection(private val context: Context) {
     suspend fun sendFrames(frames: List<ByteArray>): String? = withContext(Dispatchers.IO) {
         if (frames.isEmpty()) return@withContext null
 
-        val devices = findBudsDevices()
+        // Use sorted device list — connected devices first, then selected device
+        val devices = findBudsDevicesSorted()
         if (devices.isEmpty()) {
             Log.e(TAG, "No buds device found")
             return@withContext null
         }
 
         for (device in devices) {
+            // Skip devices that aren't connected — don't waste time trying to
+            // connect to earbuds that are in the case or out of range
+            if (!isDeviceConnected(device)) {
+                Log.i(TAG, "Skipping disconnected device: ${device.name}")
+                continue
+            }
             Log.i(TAG, "Trying device: ${device.name} (${device.address})")
             if (!connectWithRetry(device)) continue
             val out = socket?.outputStream
@@ -233,7 +276,7 @@ class BudsConnection(private val context: Context) {
                     out.flush()
                     Log.i(TAG, "Sent frame ${i + 1}/${frames.size} (${frame.size} bytes): ${OpoProtocol.toHex(frame)}")
                     // Wait for the bud to process and send ACK, then drain it
-                    Thread.sleep(100)
+                    Thread.sleep(50)
                     drainInput(inp)
                 } catch (e: IOException) {
                     Log.e(TAG, "Failed to send frame ${i + 1} to ${device.name}: ${e.message}")
@@ -243,7 +286,7 @@ class BudsConnection(private val context: Context) {
             }
 
             // Wait a bit for the buds to process the last frame before disconnecting
-            Thread.sleep(150)
+            Thread.sleep(100)
             disconnect()
             if (allSent) {
                 Log.i(TAG, "All ${frames.size} frames sent to ${device.name}")
@@ -279,13 +322,17 @@ class BudsConnection(private val context: Context) {
      * Send a frame and optionally read a response.
      */
     suspend fun sendFrameAndRead(frame: ByteArray, readTimeoutMs: Long = 0): Pair<String, ByteArray>? = withContext(Dispatchers.IO) {
-        val devices = findBudsDevices()
+        val devices = findBudsDevicesSorted()
         if (devices.isEmpty()) {
             Log.e(TAG, "No buds device found")
             return@withContext null
         }
 
         for (device in devices) {
+            if (!isDeviceConnected(device)) {
+                Log.i(TAG, "Skipping disconnected device: ${device.name}")
+                continue
+            }
             Log.i(TAG, "Trying device: ${device.name} (${device.address})")
             if (!connectWithRetry(device)) continue
             val out = socket?.outputStream

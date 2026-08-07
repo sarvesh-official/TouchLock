@@ -35,7 +35,7 @@
 
         <service
             android:name=".TouchLockTileService"
-            android:label="Touch Lock"
+            android:label="BudFreeze"
             android:icon="@drawable/ic_touch_lock"
             android:exported="true"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">

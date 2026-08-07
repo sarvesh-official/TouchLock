@@ -457,8 +457,12 @@ class MainActivity : ComponentActivity() {
                 TouchLockState.setLastDevice(this@MainActivity, device)
                 TouchLockTileService.requestListening(this@MainActivity)
                 updateStatusMessage()
-                val batt = budsConnection.queryBattery()
-                if (batt != null) TouchLockState.setBattery(batt.first, batt.second, batt.third)
+                isBusy = false
+                // Query battery in background — don't block the UI
+                launch {
+                    val batt = budsConnection.queryBattery()
+                    if (batt != null) TouchLockState.setBattery(batt.first, batt.second, batt.third)
+                }
             } else {
                 TouchLockState.setConnected(false)
                 statusMessage = "Failed to connect, make sure earbuds are out of the case and Realme Link is force-stopped"
