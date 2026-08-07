@@ -230,7 +230,7 @@ fun FindNearbyScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Find Nearby", fontWeight = FontWeight.Bold) },
+                title = { Text("Locate", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = {
                         Haptics.click()
@@ -327,18 +327,34 @@ fun FindNearbyScreen(
                         )
                     }
                 } else {
-                    TouchLockButton(
-                        text = if (radarSamples.isEmpty()) "Start Sweep" else "Sweep Again",
-                        onClick = {
-                            radarSamples.clear()
-                            strongestRssi = Int.MIN_VALUE
-                            strongestDirection = 0f
-                            isSweeping = true
-                        },
-                        icon = Icons.Filled.Radar,
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.fillMaxWidth(),
-                        height = 46.dp,
-                    )
+                    ) {
+                        TouchLockButton(
+                            text = if (radarSamples.isEmpty()) "Start Sweep" else "Sweep Again",
+                            onClick = {
+                                radarSamples.clear()
+                                strongestRssi = Int.MIN_VALUE
+                                strongestDirection = 0f
+                                isSweeping = true
+                            },
+                            icon = Icons.Filled.Radar,
+                            modifier = Modifier.weight(1f),
+                            height = 46.dp,
+                        )
+                        if (radarSamples.isNotEmpty()) {
+                            TouchLockSecondaryButton(
+                                text = "Done",
+                                onClick = {
+                                    Haptics.click()
+                                    onBack()
+                                },
+                                modifier = Modifier.weight(1f),
+                                height = 46.dp,
+                            )
+                        }
+                    }
                 }
             }
 

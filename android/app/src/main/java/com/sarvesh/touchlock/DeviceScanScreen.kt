@@ -48,7 +48,7 @@ fun DeviceScanScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Find a Device", fontWeight = FontWeight.ExtraBold) },
+                title = { Text("Locate Device", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = {
                         Haptics.click()
