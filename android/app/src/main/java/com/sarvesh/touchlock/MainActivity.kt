@@ -76,6 +76,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -83,6 +84,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var budsConnection: BudsConnection
     private var bluetoothReceiver: BroadcastReceiver? = null
     private var a2dpProxy: BluetoothProfile? = null
+    private var detectJob: kotlinx.coroutines.Job? = null
 
     private val bluetoothPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -298,13 +300,15 @@ class MainActivity : ComponentActivity() {
                     BluetoothDevice.ACTION_ACL_DISCONNECTED,
                     BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED,
                     BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED -> {
-                        detectDevice()
+                        detectDeviceDebounced()
                     }
                     BluetoothAdapter.ACTION_STATE_CHANGED -> {
                         val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
-                        if (state == BluetoothAdapter.STATE_ON) detectDevice()
+                        if (state == BluetoothAdapter.STATE_ON) detectDeviceDebounced()
                         else if (state == BluetoothAdapter.STATE_OFF) {
+                            detectJob?.cancel()
                             TouchLockState.setConnected(false)
+                            TouchLockState.setAvailableDevices(emptyList())
                             statusMessage = "Bluetooth is off"
                         }
                     }
@@ -341,6 +345,14 @@ class MainActivity : ComponentActivity() {
         else detectDevice()
     }
 
+    private fun detectDeviceDebounced() {
+        detectJob?.cancel()
+        detectJob = lifecycleScope.launch {
+            delay(500) // Debounce — wait for rapid events to settle
+            detectDevice()
+        }
+    }
+
     @SuppressLint("MissingPermission")
     private fun detectDevice() {
         val devices = budsConnection.findBudsDevicesSorted()
@@ -368,17 +380,21 @@ class MainActivity : ComponentActivity() {
         TouchLockState.setLastDevice(this, device.name)
         TouchLockState.selectDevice(device.address)
 
-        lifecycleScope.launch {
-            // Query battery for THIS specific device only
-            val batt = budsConnection.queryBatteryForDevice(device)
-            if (batt != null) {
-                TouchLockState.setConnected(true)
-                TouchLockState.setBattery(batt.first, batt.second, batt.third)
-                updateStatusMessage()
-            } else {
-                TouchLockState.setConnected(false)
-                statusMessage = "Can't reach ${device.name ?: "earbuds"}, make sure they're out of the case"
+        // Check connection status instantly using reflection — no Bluetooth connection needed
+        val isConnected = budsConnection.isDeviceConnected(device)
+        if (isConnected) {
+            TouchLockState.setConnected(true)
+            updateStatusMessage()
+            // Query battery in background — don't block the UI
+            lifecycleScope.launch {
+                val batt = budsConnection.queryBatteryForDevice(device)
+                if (batt != null) {
+                    TouchLockState.setBattery(batt.first, batt.second, batt.third)
+                }
             }
+        } else {
+            TouchLockState.setConnected(false)
+            statusMessage = "Can't reach ${device.name ?: "earbuds"}, make sure they're out of the case"
         }
     }
 
