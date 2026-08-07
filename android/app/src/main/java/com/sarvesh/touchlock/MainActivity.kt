@@ -70,6 +70,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -887,15 +889,14 @@ private fun SnowHeart(
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
-    val heartPath = remember { Path() }
     val snowflakes = remember {
-        List(8) { i ->
+        List(6) { i ->
             SnowParticle(
-                x = 0.2f + 0.6f * ((i * 37) % 100) / 100f,
+                x = 0.15f + 0.7f * ((i * 37) % 100) / 100f,
                 y = 0.1f + 0.8f * ((i * 53) % 100) / 100f,
-                speed = 0.15f + 0.1f * ((i * 71) % 100) / 100f,
-                size = 1.5f + 1f * ((i * 29) % 100) / 100f,
-                drift = 0.02f * if (i % 2 == 0) 1f else -1f,
+                speed = 0.12f + 0.08f * ((i * 71) % 100) / 100f,
+                size = 1.2f + 0.8f * ((i * 29) % 100) / 100f,
+                drift = 0.015f * if (i % 2 == 0) 1f else -1f,
             )
         }
     }
@@ -912,8 +913,8 @@ private fun SnowHeart(
     )
 
     val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 0.4f,
+        initialValue = 0.15f,
+        targetValue = 0.3f,
         animationSpec = infiniteRepeatable(
             tween(2200, easing = EaseInOutSine),
             RepeatMode.Reverse,
@@ -930,24 +931,21 @@ private fun SnowHeart(
         ) {
             val w = size.width
             val h = size.height
-            val cx = w / 2f
-            val cy = h / 2f
-            val heartScale = minOf(w, h) / 24f
+            val s = minOf(w, h) / 24f
+            val ox = (w - 24f * s) / 2f
+            val oy = (h - 24f * s) / 2f
 
-            // Build heart path centered at (cx, cy)
-            heartPath.reset()
-            heartPath.moveTo(cx, cy + 7f * heartScale)
-            heartPath.cubicTo(
-                cx - 12f * heartScale, cy - 3f * heartScale,
-                cx - 12f * heartScale, cy - 10f * heartScale,
-                cx, cy - 4f * heartScale,
-            )
-            heartPath.cubicTo(
-                cx + 12f * heartScale, cy - 10f * heartScale,
-                cx + 12f * heartScale, cy - 3f * heartScale,
-                cx, cy + 7f * heartScale,
-            )
-            heartPath.close()
+            // Material Icons Favorite path (24x24 viewport)
+            val heartPath = Path().apply {
+                moveTo(12f * s + ox, 21f * s + oy)
+                cubicTo(10.55f * s + ox, 19.68f * s + oy, 5.4f * s + ox, 15.04f * s + oy, 5.4f * s + ox, 9.5f * s + oy)
+                cubicTo(5.4f * s + ox, 6.42f * s + oy, 7.82f * s + ox, 4f * s + oy, 10.9f * s + ox, 4f * s + oy)
+                cubicTo(12.64f * s + ox, 4f * s + oy, 14.31f * s + ox, 4.81f * s + oy, 15.4f * s + ox, 6.09f * s + oy)
+                cubicTo(16.49f * s + ox, 4.81f * s + oy, 18.16f * s + ox, 4f * s + oy, 19.9f * s + ox, 4f * s + oy)
+                cubicTo(22.98f * s + ox, 4f * s + oy, 25.4f * s + ox, 6.42f * s + oy, 25.4f * s + ox, 9.5f * s + oy)
+                cubicTo(25.4f * s + ox, 15.04f * s + oy, 20.25f * s + ox, 19.68f * s + oy, 18.8f * s + ox, 21f * s + oy)
+                close()
+            }
 
             // Soft glow behind heart
             drawCircle(
@@ -956,8 +954,8 @@ private fun SnowHeart(
                         tint.copy(alpha = glowAlpha),
                         tint.copy(alpha = 0f),
                     ),
-                    center = Offset(cx, cy),
-                    radius = w * 0.7f,
+                    center = Offset(w / 2f, h / 2f),
+                    radius = w * 0.65f,
                 ),
             )
 
@@ -965,17 +963,17 @@ private fun SnowHeart(
             drawPath(
                 path = heartPath,
                 color = tint,
-                style = Stroke(width = 2f),
+                style = Stroke(width = 2.5f * density.density, cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
 
             // Snowflakes falling inside heart (clipped)
             clipPath(heartPath) {
                 snowflakes.forEach { flake ->
                     val yPos = ((flake.y + progress * flake.speed) % 1f) * h
-                    val xPos = cx + (flake.x - 0.5f) * w * 0.6f +
+                    val xPos = w / 2f + (flake.x - 0.5f) * w * 0.5f +
                         sin((progress + flake.y) * 2f * PI.toFloat()) * flake.drift * w
                     drawCircle(
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = Color.White.copy(alpha = 0.85f),
                         radius = flake.size * density.density,
                         center = Offset(xPos, yPos),
                     )
