@@ -26,6 +26,7 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -34,6 +35,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,6 +55,8 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -715,7 +721,7 @@ fun TouchLockScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            // Find Device + Find Nearby — side by side as a row
+            // Find Device + Find Nearby — premium action cards
             Spacer(modifier = Modifier.height(12.dp))
             AnimatedContent(
                 targetState = isBeeping,
@@ -725,33 +731,30 @@ fun TouchLockScreen(
                 label = "findButton",
             ) { beeping ->
                 if (beeping) {
-                    TouchLockButton(
-                        text = "Stop Beeping",
+                    FindActionCard(
+                        icon = Icons.Filled.SearchOff,
+                        title = "Stop Beeping",
+                        subtitle = "Your earbuds are ringing",
                         onClick = onFindStopClick,
                         enabled = connected,
-                        variant = ButtonVariant.DANGER,
-                        icon = Icons.Filled.SearchOff,
-                        modifier = Modifier.fillMaxWidth(),
-                        height = 48.dp,
+                        isDanger = true,
+                        isPulsing = true,
                     )
                 } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        TouchLockSecondaryButton(
-                            text = "Beep",
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FindActionCard(
+                            icon = Icons.Filled.GraphicEq,
+                            title = "Beep",
+                            subtitle = "Play a sound on your earbuds",
                             onClick = onFindClick,
                             enabled = !isBusy && connected,
-                            icon = Icons.Filled.Search,
-                            modifier = Modifier.weight(1f),
                         )
-                        TouchLockSecondaryButton(
-                            text = "Locate",
+                        FindActionCard(
+                            icon = Icons.Filled.Radar,
+                            title = "Locate",
+                            subtitle = "Find how close your earbuds are",
                             onClick = onFindNearbyClick,
                             enabled = !isBusy && connected,
-                            icon = Icons.Filled.Radar,
-                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -886,6 +889,109 @@ fun TouchLockScreen(
             containerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
         )
+    }
+}
+
+@Composable
+private fun FindActionCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    isDanger: Boolean = false,
+    isPulsing: Boolean = false,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = tween(80),
+        label = "cardPress",
+    )
+
+    // Subtle pulse for the danger "Stop Beeping" state
+    val pulseTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseAlpha by pulseTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(800, easing = EaseInOutSine), RepeatMode.Reverse),
+        label = "pulseAlpha",
+    )
+
+    val accentColor = if (isDanger) MaterialTheme.colorScheme.error
+                      else MaterialTheme.colorScheme.primary
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val borderColor = if (enabled) MaterialTheme.colorScheme.outlineVariant
+                      else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    val titleColor = if (enabled) MaterialTheme.colorScheme.onSurface
+                     else MaterialTheme.colorScheme.onSurfaceVariant
+    val subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    val dangerBorder = if (isDanger && isPulsing)
+        MaterialTheme.colorScheme.error.copy(alpha = 0.3f + pulseAlpha * 0.4f)
+    else borderColor
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .clip(RoundedCornerShape(16.dp))
+            .background(surfaceColor)
+            .border(1.dp, dangerBorder, RoundedCornerShape(16.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                onClick = {
+                    Haptics.click()
+                    onClick()
+                },
+            )
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(
+                    if (isDanger && isPulsing)
+                        accentColor.copy(alpha = 0.12f + pulseAlpha * 0.1f)
+                    else
+                        accentColor.copy(alpha = 0.12f)
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (enabled) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = titleColor,
+            )
+            Text(
+                text = subtitle,
+                fontSize = 13.sp,
+                color = subtitleColor,
+            )
+        }
+        if (enabled) {
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(22.dp),
+            )
+        }
     }
 }
 
