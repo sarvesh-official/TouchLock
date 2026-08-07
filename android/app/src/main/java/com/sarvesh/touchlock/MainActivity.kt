@@ -876,26 +876,65 @@ fun TouchLockScreen(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Subtle breathing pulse — gentle, not distracting
-            val heartBeat by rememberInfiniteTransition(label = "heart").animateFloat(
-                initialValue = 1f,
-                targetValue = 1.08f,
+            // Soft glowing aura behind heart — warm light breathing effect
+            val glowTransition = rememberInfiniteTransition(label = "heartGlow")
+            val glowRadius by glowTransition.animateFloat(
+                initialValue = 16f,
+                targetValue = 26f,
                 animationSpec = infiniteRepeatable(
-                    tween(2400, easing = EaseInOutSine),
+                    tween(2000, easing = EaseInOutSine),
                     RepeatMode.Reverse,
                 ),
-                label = "heartBeat",
+                label = "glowRadius",
             )
+            val glowAlpha by glowTransition.animateFloat(
+                initialValue = 0.25f,
+                targetValue = 0.55f,
+                animationSpec = infiniteRepeatable(
+                    tween(2000, easing = EaseInOutSine),
+                    RepeatMode.Reverse,
+                ),
+                label = "glowAlpha",
+            )
+            val heartScale by glowTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.06f,
+                animationSpec = infiniteRepeatable(
+                    tween(2000, easing = EaseInOutSine),
+                    RepeatMode.Reverse,
+                ),
+                label = "heartScale",
+            )
+            val teal = MaterialTheme.colorScheme.primary
             IconButton(onClick = {
                 Haptics.click()
                 onSupporterClick()
             }) {
-                Icon(
-                    if (isSupporter) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = "Support",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.scale(heartBeat),
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    // Glowing aura behind the heart
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .drawBehind {
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            teal.copy(alpha = glowAlpha),
+                                            teal.copy(alpha = 0f),
+                                        ),
+                                        radius = glowRadius.dp.toPx(),
+                                    ),
+                                )
+                            },
+                    )
+                    // Heart icon with subtle scale
+                    Icon(
+                        if (isSupporter) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = "Support",
+                        tint = teal,
+                        modifier = Modifier.scale(heartScale),
+                    )
+                }
             }
             IconButton(onClick = {
                 Haptics.click()

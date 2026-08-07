@@ -5,15 +5,21 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -93,6 +99,23 @@ fun SupporterSheet(
                     textAlign = TextAlign.Center,
                 )
 
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Supporter benefits
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SupporterBenefit(icon = Icons.Filled.Palette, text = "Custom accent colors")
+                    SupporterBenefit(icon = Icons.Filled.Devices, text = "Find any Bluetooth device")
+                    SupporterBenefit(icon = Icons.Filled.Favorite, text = "Filled heart badge")
+                    SupporterBenefit(icon = Icons.Filled.Code, text = "Priority feature requests")
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 val price = productDetails?.oneTimePurchaseOfferDetails?.formattedPrice ?: "$2.99"
@@ -144,5 +167,34 @@ fun SupporterSheet(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SupporterBenefit(icon: ImageVector, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
