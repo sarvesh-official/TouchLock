@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Settings
@@ -27,11 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -118,6 +116,16 @@ fun SettingsScreen(
                 onClick = { },
             )
 
+            SettingsRow(
+                icon = Icons.Filled.Code,
+                title = "Contribute",
+                subtitle = "Report issues or submit pull requests",
+                onClick = {
+                    val githubUrl = "https://github.com/sarvesh-official/TouchLock"
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl)))
+                },
+            )
+
             // Version info
             Spacer(modifier = Modifier.height(8.dp))
             val version = remember {
@@ -134,31 +142,6 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            val githubUrl = "https://github.com/sarvesh-official/TouchLock"
-            val linkColor = MaterialTheme.colorScheme.primary
-            val annotatedLink = buildAnnotatedString {
-                withStyle(
-                    SpanStyle(
-                        color = linkColor,
-                        fontWeight = FontWeight.Medium,
-                    )
-                ) {
-                    append("Open source")
-                }
-            }
-            Text(
-                text = annotatedLink,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .clickable {
-                        Haptics.click()
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl)))
-                    },
             )
         }
     }
