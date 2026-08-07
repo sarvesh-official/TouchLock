@@ -2,6 +2,16 @@ package com.sarvesh.touchlock
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothA2dp
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothHeadset
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -64,6 +74,8 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private lateinit var budsConnection: BudsConnection
+    private var bluetoothReceiver: BroadcastReceiver? = null
+    private var a2dpProxy: BluetoothProfile? = null
 
     private val bluetoothPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -220,9 +232,69 @@ class MainActivity : ComponentActivity() {
         checkPermissionsAndInit()
     }
 
+    override fun onResume() {
+        super.onResume()
+        registerBluetoothReceiver()
+        // Re-check device state when returning to the app
+        if (TouchLockState.selectedDeviceAddress.value != null) {
+            detectDevice()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterBluetoothReceiver()
+    }
+
     override fun onDestroy() {
+        try {
+            val bluetoothManager = getSystemService(BluetoothManager::class.java)
+            bluetoothManager?.adapter?.closeProfileProxy(BluetoothProfile.A2DP, a2dpProxy)
+        } catch (_: Exception) {}
         supporterBilling.endConnection()
         super.onDestroy()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun registerBluetoothReceiver() {
+        if (bluetoothReceiver != null) return
+
+        bluetoothReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                when (intent.action) {
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_ACL_DISCONNECTED,
+                    BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED,
+                    BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED -> {
+                        detectDevice()
+                    }
+                    BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                        val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                        if (state == BluetoothAdapter.STATE_ON) detectDevice()
+                        else if (state == BluetoothAdapter.STATE_OFF) {
+                            TouchLockState.setConnected(false)
+                            statusMessage = "Bluetooth is off"
+                        }
+                    }
+                }
+            }
+        }
+
+        val filter = IntentFilter().apply {
+            addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+            addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+            addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)
+            addAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED)
+            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+        }
+        registerReceiver(bluetoothReceiver, filter)
+    }
+
+    private fun unregisterBluetoothReceiver() {
+        bluetoothReceiver?.let {
+            try { unregisterReceiver(it) } catch (_: Exception) {}
+        }
+        bluetoothReceiver = null
     }
 
     private fun checkPermissionsAndInit() {
@@ -273,7 +345,7 @@ class MainActivity : ComponentActivity() {
                 updateStatusMessage()
             } else {
                 TouchLockState.setConnected(false)
-                statusMessage = "Earbuds paired but not responding, make sure they're out of the case and Realme Link is force-stopped"
+                statusMessage = "Can't reach ${device.name ?: "earbuds"}, make sure they're out of the case"
             }
         }
     }

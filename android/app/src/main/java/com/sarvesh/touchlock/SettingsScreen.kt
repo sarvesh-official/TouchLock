@@ -31,7 +31,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -140,15 +139,13 @@ fun SettingsScreen(
             val githubUrl = "https://github.com/sarvesh-official/TouchLock"
             val linkColor = MaterialTheme.colorScheme.primary
             val annotatedLink = buildAnnotatedString {
-                append("Open source, ")
                 withStyle(
                     SpanStyle(
                         color = linkColor,
-                        textDecoration = TextDecoration.Underline,
                         fontWeight = FontWeight.Medium,
                     )
                 ) {
-                    append("github.com/sarvesh-official/TouchLock")
+                    append("Open source")
                 }
             }
             Text(
