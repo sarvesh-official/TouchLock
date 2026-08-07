@@ -98,6 +98,8 @@ class MainActivity : ComponentActivity() {
     private var showPrivacyPolicy by mutableStateOf(false)
     private var showFindNearby by mutableStateOf(false)
     private var findNearbyDevice by mutableStateOf<String?>(null)
+    private var findNearbyDeviceName by mutableStateOf<String?>(null)
+    private var showDeviceScan by mutableStateOf(false)
     private var showSupporter by mutableStateOf(false)
     private var showQsPrompt by mutableStateOf(false)
     private var isBeeping by mutableStateOf(false)
@@ -120,7 +122,8 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition { !contentReady }
 
         setContent {
-            TouchLockAppTheme {
+            var accentColor by remember { mutableStateOf(AccentColorStore.get(this)) }
+            TouchLockAppTheme(accentColor = accentColor) {
                 var showSplash by remember { mutableStateOf(savedInstanceState == null) }
 
                 if (showSplash) {
@@ -203,12 +206,28 @@ class MainActivity : ComponentActivity() {
                         },
                         onSupporterClick = { showSupporter = true },
                         tileAdded = tileAdded,
+                        isSupporter = isSupporter,
+                        accentColor = accentColor,
+                        onAccentChange = { newColor ->
+                            AccentColorStore.set(this, newColor)
+                            accentColor = newColor
+                        },
+                    )
+                } else if (showDeviceScan) {
+                    DeviceScanScreen(
+                        onBack = { showDeviceScan = false },
+                        onDeviceSelected = { mac, name ->
+                            findNearbyDevice = mac
+                            findNearbyDeviceName = name
+                            showDeviceScan = false
+                            showFindNearby = true
+                        },
                     )
                 } else if (showFindNearby) {
                     val selectedDevice = availableDevices.find { it.address == findNearbyDevice }
                     FindNearbyScreen(
                         deviceMac = findNearbyDevice ?: "",
-                        deviceName = selectedDevice?.name ?: deviceName,
+                        deviceName = findNearbyDeviceName ?: selectedDevice?.name ?: deviceName,
                         onBack = { showFindNearby = false },
                     )
                 } else {
@@ -230,7 +249,11 @@ class MainActivity : ComponentActivity() {
                         onRestoreBoth = { setBoth(false) },
                         onFindClick = { sendCommand(Command.FIND) },
                         onFindStopClick = { sendCommand(Command.FIND_STOP) },
-                        onFindNearbyClick = { addr -> findNearbyDevice = addr; showFindNearby = true },
+                        onFindNearbyClick = { addr -> findNearbyDevice = addr; findNearbyDeviceName = null; showFindNearby = true },
+                        onScanDevicesClick = {
+                            if (isSupporter) showDeviceScan = true
+                            else showSupporter = true
+                        },
                         onSettingsClick = { showSettings = true },
                         onSupporterClick = { showSupporter = true },
                         onConfirmLock = { action -> executeLock(action) },
@@ -525,6 +548,7 @@ fun TouchLockScreen(
     onFindClick: () -> Unit,
     onFindStopClick: () -> Unit,
     onFindNearbyClick: (String) -> Unit,
+    onScanDevicesClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSupporterClick: () -> Unit,
     onConfirmLock: (MainActivity.LockAction) -> Unit,
@@ -763,24 +787,21 @@ fun TouchLockScreen(
                                 title = "Locate",
                                 onClick = { onFindNearbyClick(selectedAddr ?: "") },
                                 enabled = !isBusy && connected,
-                                trailing = if (availableDevices.size > 1) {
-                                    {
-                                        Icon(
-                                            Icons.Filled.ArrowDropDown,
-                                            contentDescription = "Select device",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier
-                                                .size(18.dp)
-                                                .clickable {
-                                                    Haptics.click()
-                                                    locateMenuExpanded = true
-                                                },
-                                        )
-                                    }
-                                } else null,
+                                trailing = {
+                                    Icon(
+                                        Icons.Filled.ArrowDropDown,
+                                        contentDescription = "Select device",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .clickable {
+                                                Haptics.click()
+                                                locateMenuExpanded = true
+                                            },
+                                    )
+                                },
                             )
-                            if (availableDevices.size > 1) {
-                                DropdownMenu(
+                            DropdownMenu(
                                     expanded = locateMenuExpanded,
                                     onDismissRequest = { locateMenuExpanded = false },
                                     modifier = Modifier
@@ -828,8 +849,39 @@ fun TouchLockScreen(
                                                 )
                                             }
                                         }
+                                        // Scan for any device
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                            color = MaterialTheme.colorScheme.outlineVariant,
+                                        )
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .clickable {
+                                                    Haptics.click()
+                                                    locateMenuExpanded = false
+                                                    onScanDevicesClick()
+                                                }
+                                                .padding(horizontal = 12.dp, vertical = 11.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Icon(
+                                                Icons.Filled.Radar,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp),
+                                            )
+                                            Spacer(modifier = Modifier.width(14.dp))
+                                            Text(
+                                                "Scan for any device",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
                                     }
-                                }
                             }
                         }
                     }

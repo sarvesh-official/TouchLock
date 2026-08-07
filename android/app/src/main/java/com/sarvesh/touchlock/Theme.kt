@@ -130,9 +130,10 @@ private val AppTypography = Typography(
 @Composable
 fun TouchLockAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    accentColor: AccentColor = AccentColor.Teal,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = if (darkTheme) buildDarkScheme(accentColor) else buildLightScheme(accentColor)
     androidx.compose.material3.MaterialTheme(
         colorScheme = colorScheme,
         typography = AppTypography,
@@ -140,3 +141,57 @@ fun TouchLockAppTheme(
         content = content,
     )
 }
+
+private fun buildDarkScheme(accent: AccentColor) = darkColorScheme(
+    primary = accent.dark,
+    onPrimary = accent.onPrimaryDark,
+    primaryContainer = accent.darkContainer,
+    onPrimaryContainer = accent.darkOnContainer,
+    secondary = accent.dark,
+    onSecondary = accent.onPrimaryDark,
+    secondaryContainer = accent.darkContainer,
+    onSecondaryContainer = accent.darkOnContainer,
+    tertiary = accent.dark,
+    onTertiary = accent.onPrimaryDark,
+    tertiaryContainer = accent.darkContainer,
+    onTertiaryContainer = accent.darkOnContainer,
+    background = DarkCanvas,
+    onBackground = DarkOnSurface,
+    surface = DarkSurface,
+    onSurface = DarkOnSurface,
+    surfaceVariant = DarkSurfaceVariant,
+    onSurfaceVariant = Color(0xFFA8A29A),
+    error = ErrorAccent,
+    onError = Color(0xFFFFFFFF),
+    errorContainer = ErrorContainerDark,
+    onErrorContainer = ErrorAccentDark,
+    outline = DarkOutline,
+    outlineVariant = DarkOutlineVariant,
+)
+
+private fun buildLightScheme(accent: AccentColor) = lightColorScheme(
+    primary = accent.light,
+    onPrimary = accent.onPrimaryLight,
+    primaryContainer = accent.lightContainer,
+    onPrimaryContainer = accent.lightOnContainer,
+    secondary = accent.light,
+    onSecondary = accent.onPrimaryLight,
+    secondaryContainer = accent.lightContainer,
+    onSecondaryContainer = accent.lightOnContainer,
+    tertiary = accent.light,
+    onTertiary = accent.onPrimaryLight,
+    tertiaryContainer = accent.lightContainer,
+    onTertiaryContainer = accent.lightOnContainer,
+    background = LightCanvas,
+    onBackground = LightOnSurface,
+    surface = LightSurface,
+    onSurface = LightOnSurface,
+    surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = Color(0xFF6B6660),
+    error = ErrorAccent,
+    onError = Color(0xFFFFFFFF),
+    errorContainer = ErrorContainerLight,
+    onErrorContainer = Color(0xFF4A1A0E),
+    outline = LightOutline,
+    outlineVariant = LightOutlineVariant,
+)

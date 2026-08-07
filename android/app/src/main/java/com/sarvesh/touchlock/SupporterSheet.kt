@@ -1,5 +1,7 @@
 package com.sarvesh.touchlock
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -75,6 +77,20 @@ fun SupporterSheet(
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                val context = LocalContext.current
+                TouchLockSecondaryButton(
+                    text = "Priority Feature Requests",
+                    icon = Icons.Filled.Code,
+                    onClick = {
+                        Haptics.click()
+                        val githubUrl = "https://github.com/sarvesh-official/BudFreeze/issues/new?labels=priority-supporter&title=Feature+Request"
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl)))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
                 )
             } else {
                 // Purchase UI

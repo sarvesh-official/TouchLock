@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -22,7 +24,9 @@ import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +46,9 @@ fun SettingsScreen(
     onAddQsTile: () -> Unit,
     onSupporterClick: () -> Unit,
     tileAdded: Boolean,
+    isSupporter: Boolean = false,
+    accentColor: AccentColor = AccentColor.Teal,
+    onAccentChange: (AccentColor) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -96,6 +103,18 @@ fun SettingsScreen(
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
                 } else null,
                 onClick = { if (!tileAdded) onAddQsTile() },
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ── Appearance section ──
+            SectionLabel("APPEARANCE")
+
+            AccentColorPicker(
+                isSupporter = isSupporter,
+                selected = accentColor,
+                onSelect = onAccentChange,
+                onSupporterClick = onSupporterClick,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -209,6 +228,87 @@ private fun SettingsRow(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(22.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccentColorPicker(
+    isSupporter: Boolean,
+    selected: AccentColor,
+    onSelect: (AccentColor) -> Unit,
+    onSupporterClick: () -> Unit,
+) {
+    var unlocked by remember { mutableStateOf(isSupporter) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Filled.Palette,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Accent Color",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = if (unlocked) "Tap to change the app accent"
+                           else "Supporter feature — unlock to customize",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(14.dp))
+        if (unlocked) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                AccentColor.entries.forEach { color ->
+                    val isSelected = color == selected
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp)
+                            .clip(CircleShape)
+                            .background(color.dark)
+                            .border(
+                                if (isSelected) 3.dp else 1.dp,
+                                if (isSelected) MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.colorScheme.outlineVariant,
+                                CircleShape,
+                            )
+                            .clickable {
+                                Haptics.click()
+                                onSelect(color)
+                            },
+                    )
+                }
+            }
+        } else {
+            TouchLockButton(
+                text = "Unlock with Supporter",
+                onClick = {
+                    Haptics.click()
+                    onSupporterClick()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                height = 44.dp,
             )
         }
     }
