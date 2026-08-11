@@ -22,7 +22,6 @@ package com.sarvesh.touchlock
 object OpoProtocol {
 
     const val OPO_UUID = "0000079A-D102-11E1-9B23-00025B00A5A5"
-    const val OPO_UUID_ALT = "00001107-D102-11E1-9B23-00025B00A5A5"
 
     // Command IDs (little-endian in the frame)
     private const val CMD_TOUCH_CONFIG_SET = 0x0401
