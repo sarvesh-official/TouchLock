@@ -308,7 +308,7 @@ class MainActivity : ComponentActivity() {
                         else if (state == BluetoothAdapter.STATE_OFF) {
                             detectJob?.cancel()
                             TouchLockState.setConnected(false)
-                            TouchLockState.setAvailableDevices(emptyList())
+                            TouchLockState.clearAvailableDevices()
                             statusMessage = "Bluetooth is off"
                         }
                     }

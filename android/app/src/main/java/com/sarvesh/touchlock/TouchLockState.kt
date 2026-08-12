@@ -41,6 +41,10 @@ object TouchLockState {
         _availableDevices.value = devices
     }
 
+    fun clearAvailableDevices() {
+        _availableDevices.value = emptyList()
+    }
+
     fun selectDevice(address: String) {
         _selectedDeviceAddress.value = address
     }
