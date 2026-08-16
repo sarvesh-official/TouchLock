@@ -28,6 +28,7 @@ class BudsConnection(private val context: Context) {
         private const val TAG = "BudsConnection"
         private val OPO_UUID: UUID = UUID.fromString(OpoProtocol.OPO_UUID)
         private const val FIXED_CHANNEL = 15
+        private const val MAX_CONNECT_RETRIES = 2
     }
 
     private var socket: BluetoothSocket? = null
@@ -145,7 +146,7 @@ class BudsConnection(private val context: Context) {
      * Connect to the earbuds via RFCOMM. Tries multiple UUIDs and a fixed channel.
      * Returns true on success.
      */
-    private fun connectWithRetry(device: BluetoothDevice, maxRetries: Int = 2): Boolean {
+    private fun connectWithRetry(device: BluetoothDevice, maxRetries: Int = MAX_CONNECT_RETRIES): Boolean {
         for (attempt in 1..maxRetries) {
             // Try primary UUID
             if (tryConnect(device, OPO_UUID, "primary UUID", attempt)) return true
