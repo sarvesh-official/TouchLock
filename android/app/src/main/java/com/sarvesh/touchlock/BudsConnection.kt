@@ -29,6 +29,7 @@ class BudsConnection(private val context: Context) {
         private val OPO_UUID: UUID = UUID.fromString(OpoProtocol.OPO_UUID)
         private const val FIXED_CHANNEL = 15
         private const val MAX_CONNECT_RETRIES = 2
+        private const val CONNECT_TIMEOUT_MS = 3000L
     }
 
     private var socket: BluetoothSocket? = null
@@ -166,7 +167,7 @@ class BudsConnection(private val context: Context) {
             Log.i(TAG, "Connecting to ${device.name} via $label (attempt $attempt)...")
             socket = device.createRfcommSocketToServiceRecord(uuid)
             // Connect with a timeout — don't block for 5+ seconds on unreachable devices
-            val connected = connectWithTimeout(socket!!, timeoutMs = 3000)
+            val connected = connectWithTimeout(socket!!, CONNECT_TIMEOUT_MS)
             if (connected) {
                 Log.i(TAG, "Connected via $label on attempt $attempt!")
                 true
@@ -188,7 +189,7 @@ class BudsConnection(private val context: Context) {
             Log.i(TAG, "Connecting to ${device.name} via $label (attempt $attempt)...")
             val method = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
             socket = method.invoke(device, channel) as BluetoothSocket
-            val connected = connectWithTimeout(socket!!, timeoutMs = 3000)
+            val connected = connectWithTimeout(socket!!, CONNECT_TIMEOUT_MS)
             if (connected) {
                 Log.i(TAG, "Connected via $label on attempt $attempt!")
                 true
