@@ -30,6 +30,7 @@ class BudsConnection(private val context: Context) {
         private const val FIXED_CHANNEL = 15
         private const val MAX_CONNECT_RETRIES = 2
         private const val CONNECT_TIMEOUT_MS = 3000L
+        private const val RETRY_DELAY_MS = 200L
     }
 
     private var socket: BluetoothSocket? = null
@@ -155,7 +156,7 @@ class BudsConnection(private val context: Context) {
             if (tryConnectChannel(device, FIXED_CHANNEL, "channel $FIXED_CHANNEL", attempt)) return true
 
             if (attempt < maxRetries) {
-                try { Thread.sleep(200) } catch (_: InterruptedException) {}
+                try { Thread.sleep(RETRY_DELAY_MS) } catch (_: InterruptedException) {}
             }
         }
         Log.e(TAG, "All connect attempts failed for ${device.name}")
