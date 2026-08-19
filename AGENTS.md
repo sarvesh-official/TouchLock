@@ -29,7 +29,9 @@ BudFreeze (formerly TouchLock) is an Android app that locks/unlocks touch contro
 ## Bluetooth Connection
 - Uses `isDeviceConnected()` reflection check to skip disconnected devices
 - `hasConnectedDevice()` for quick boolean check without battery query
-- Socket connect has 3-second timeout via daemon thread
+- Socket connect has 3-second timeout via daemon thread (`CONNECT_TIMEOUT_MS`)
+- Retry delay between attempts: 200ms (`RETRY_DELAY_MS`)
+- Max connect retries: 2 (`MAX_CONNECT_RETRIES`)
 - Only tries connected devices — skips paired-but-disconnected ones
 - Battery query runs in background, never blocks UI
 - Supported device patterns centralized in `OpoProtocol.SUPPORTED_DEVICE_PATTERNS`
