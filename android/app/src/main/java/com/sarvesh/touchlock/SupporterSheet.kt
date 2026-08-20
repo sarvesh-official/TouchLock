@@ -42,11 +42,14 @@ fun SupporterSheet(
     // Reset flow state when sheet opens
     LaunchedEffect(Unit) { billing.resetFlowState() }
 
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     ModalBottomSheet(
         onDismissRequest = {
             billing.resetFlowState()
             onDismiss()
         },
+        sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
