@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Settings
@@ -46,6 +47,7 @@ fun SettingsScreen(
     onGestureSettingsClick: () -> Unit,
     onPrivacyPolicyClick: () -> Unit,
     onHelpClick: () -> Unit,
+    onRateClick: () -> Unit,
     onAddQsTile: () -> Unit,
     onSupporterClick: () -> Unit,
     tileAdded: Boolean,
@@ -130,6 +132,23 @@ fun SettingsScreen(
                 title = "Help & Support",
                 subtitle = "Troubleshooting, supported devices, FAQ",
                 onClick = onHelpClick,
+            )
+
+            SettingsRow(
+                icon = Icons.Filled.Star,
+                title = "Rate BudFreeze",
+                subtitle = "Enjoying the app? Leave a review",
+                onClick = onRateClick,
+            )
+
+            SettingsRow(
+                icon = Icons.Filled.BugReport,
+                title = "Report an Issue",
+                subtitle = "Bug, connection problem, or feature request",
+                onClick = {
+                    val url = "https://github.com/sarvesh-official/BudFreeze/issues/new?labels=bug&title=Issue+report"
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                },
             )
 
             SettingsRow(

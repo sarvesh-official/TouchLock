@@ -110,4 +110,6 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
     // Google Play Billing for Supporter IAP
     implementation("com.android.billingclient:billing-ktx:7.1.1")
+    // Google Play In-App Review
+    implementation("com.google.android.play:review:2.0.2")
 }

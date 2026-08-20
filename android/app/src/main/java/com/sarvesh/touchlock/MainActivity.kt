@@ -224,6 +224,9 @@ class MainActivity : ComponentActivity() {
                         onGestureSettingsClick = { showGestureSettings = true },
                         onPrivacyPolicyClick = { showPrivacyPolicy = true },
                         onHelpClick = { showHelp = true },
+                        onRateClick = {
+                            ReviewHelper.promptReview(this@MainActivity)
+                        },
                         onAddQsTile = {
                             requestAddQsTile(this) { result ->
                                 when (result) {
@@ -550,6 +553,12 @@ class MainActivity : ComponentActivity() {
                 TouchLockTileService.requestListening(this@MainActivity)
                 updateStatusMessage()
                 isBusy = false
+
+                // Track successful actions for review prompt
+                ReviewHelper.recordSuccessfulAction(this@MainActivity)
+                if (ReviewHelper.shouldPromptForReview(this@MainActivity)) {
+                    ReviewHelper.promptReview(this@MainActivity)
+                }
 
                 // Check if this is an unknown device that works — prompt to report
                 if (!DeviceCatalog.isKnownDevice(device) &&
