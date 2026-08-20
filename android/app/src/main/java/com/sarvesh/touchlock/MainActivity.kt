@@ -55,6 +55,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material3.*
@@ -89,7 +90,12 @@ class MainActivity : ComponentActivity() {
     private val bluetoothPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        if (permissions.values.all { it }) detectDevice()
+        if (permissions.values.all { it }) {
+            permissionDenied = false
+            detectDevice()
+        } else {
+            permissionDenied = true
+        }
     }
 
     private var statusMessage by mutableStateOf("Tap a bud to lock it")
@@ -103,6 +109,9 @@ class MainActivity : ComponentActivity() {
     private var showDeviceScan by mutableStateOf(false)
     private var showSupporter by mutableStateOf(false)
     private var showQsPrompt by mutableStateOf(false)
+    private var showOnboarding by mutableStateOf(false)
+    private var showHelp by mutableStateOf(false)
+    private var permissionDenied by mutableStateOf(false)
     private var isBeeping by mutableStateOf(false)
     private var beepJob: kotlinx.coroutines.Job? = null
     private lateinit var supporterBilling: SupporterBilling
@@ -118,6 +127,12 @@ class MainActivity : ComponentActivity() {
         Haptics.init(this)
         supporterBilling = SupporterBilling.get(this)
         supporterBilling.startConnection()
+
+        // Show onboarding on first launch
+        val prefs = getSharedPreferences("budfreeze_prefs", MODE_PRIVATE)
+        if (!prefs.getBoolean("onboarding_completed", false)) {
+            showOnboarding = true
+        }
 
         var contentReady = savedInstanceState != null
         splashScreen.setKeepOnScreenCondition { !contentReady }
@@ -140,6 +155,17 @@ class MainActivity : ComponentActivity() {
                 }
 
                 contentReady = true
+
+                if (showOnboarding) {
+                    OnboardingScreen(
+                        onFinished = {
+                            getSharedPreferences("budfreeze_prefs", MODE_PRIVATE)
+                                .edit().putBoolean("onboarding_completed", true).apply()
+                            showOnboarding = false
+                        },
+                    )
+                    return@TouchLockAppTheme
+                }
 
                 val leftLocked by TouchLockState.leftLocked.collectAsStateWithLifecycle()
                 val rightLocked by TouchLockState.rightLocked.collectAsStateWithLifecycle()
@@ -177,6 +203,8 @@ class MainActivity : ComponentActivity() {
 
                 if (showPrivacyPolicy) {
                     PrivacyPolicyScreen(onBack = { showPrivacyPolicy = false })
+                } else if (showHelp) {
+                    HelpScreen(onBack = { showHelp = false })
                 } else if (showGestureSettings) {
                     GestureSettingsScreen(
                         initialValues = GestureConfigStore.getGestureValues(this),
@@ -193,6 +221,7 @@ class MainActivity : ComponentActivity() {
                         onBack = { showSettings = false },
                         onGestureSettingsClick = { showGestureSettings = true },
                         onPrivacyPolicyClick = { showPrivacyPolicy = true },
+                        onHelpClick = { showHelp = true },
                         onAddQsTile = {
                             requestAddQsTile(this) { result ->
                                 when (result) {
@@ -243,6 +272,10 @@ class MainActivity : ComponentActivity() {
                         connected = connected,
                         isSupporter = isSupporter,
                         availableDevices = availableDevices,
+                        permissionDenied = permissionDenied,
+                        onRetryPermission = {
+                            checkPermissionsAndInit()
+                        },
                         onSwitchDevice = { addr -> switchDevice(addr) },
                         onLeftTap = { toggleSide(OpoProtocol.SIDE_LEFT) },
                         onRightTap = { toggleSide(OpoProtocol.SIDE_RIGHT) },
@@ -564,6 +597,8 @@ fun TouchLockScreen(
     connected: Boolean,
     isSupporter: Boolean,
     availableDevices: List<TouchLockState.DeviceInfo>,
+    permissionDenied: Boolean = false,
+    onRetryPermission: () -> Unit = {},
     onSwitchDevice: (String) -> Unit,
     onLeftTap: () -> Unit,
     onRightTap: () -> Unit,
@@ -614,6 +649,11 @@ fun TouchLockScreen(
                 .padding(top = 56.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Permission denied banner
+            if (permissionDenied) {
+                PermissionDeniedBanner(onRetry = onRetryPermission)
+            }
+
             // Device name — tappable dropdown if multiple devices
             if (deviceName != null) {
                 var deviceMenuExpanded by remember { mutableStateOf(false) }
@@ -737,6 +777,12 @@ fun TouchLockScreen(
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            // No supported devices indicator
+            if (!connected && availableDevices.isEmpty() && !permissionDenied) {
+                Spacer(modifier = Modifier.height(16.dp))
+                NoSupportedDevicesCard()
+            }
 
             // Case battery (only shown if available)
             if (connected && battery.case >= 0) {
@@ -1263,6 +1309,81 @@ private fun ControlRow(
                 uncheckedThumbColor = MaterialTheme.colorScheme.surface,
                 uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
             ),
+        )
+    }
+}
+
+@Composable
+private fun PermissionDeniedBanner(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 20.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.errorContainer)
+            .padding(16.dp),
+    ) {
+        Text(
+            text = "Bluetooth Permission Required",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = "BudFreeze needs Bluetooth permission to connect to your earbuds and lock touch controls. Without it, the app can't function.",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        TouchLockButton(
+            text = "Grant Permission",
+            onClick = {
+                Haptics.click()
+                onRetry()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            height = 44.dp,
+        )
+    }
+}
+
+@Composable
+private fun NoSupportedDevicesCard() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Filled.Headphones,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "No Compatible Earbuds Found",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "BudFreeze works with Realme Buds, Nord Buds, OnePlus Buds, and OPPO Enco. Make sure your earbuds are paired in Bluetooth settings and out of the case.",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "If your earbuds aren't on this list, they may not be compatible with BudFreeze.",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
         )
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PrivacyTip
@@ -44,6 +45,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onGestureSettingsClick: () -> Unit,
     onPrivacyPolicyClick: () -> Unit,
+    onHelpClick: () -> Unit,
     onAddQsTile: () -> Unit,
     onSupporterClick: () -> Unit,
     tileAdded: Boolean,
@@ -122,6 +124,13 @@ fun SettingsScreen(
 
             // ── About section ──
             SectionLabel("ABOUT")
+
+            SettingsRow(
+                icon = Icons.Filled.HelpOutline,
+                title = "Help & Support",
+                subtitle = "Troubleshooting, supported devices, FAQ",
+                onClick = onHelpClick,
+            )
 
             SettingsRow(
                 icon = Icons.Filled.PrivacyTip,
