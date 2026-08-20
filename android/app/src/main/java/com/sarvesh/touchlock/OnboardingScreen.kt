@@ -52,7 +52,7 @@ fun OnboardingScreen(
         ),
         OnboardingPage(
             icon = Icons.Filled.Lock,
-            title = "Important: Realme Link Conflict",
+            title = "Realme Link Conflict",
             description = "If you have the Realme Link app installed, it can conflict with BudFreeze. Both apps try to control the earbuds at the same time.",
             bullets = listOf(
                 "Force-stop Realme Link before using BudFreeze",
@@ -74,12 +74,33 @@ fun OnboardingScreen(
 
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val scope = rememberCoroutineScope()
+    val isLastPage = pagerState.currentPage == pages.size - 1
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
     ) {
+        // Top bar with Skip on the right
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            if (!isLastPage) {
+                TextButton(onClick = {
+                    Haptics.click()
+                    onFinished()
+                }) {
+                    Text("Skip", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        // Pager content
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.weight(1f),
@@ -87,60 +108,47 @@ fun OnboardingScreen(
             OnboardingPageContent(pages[page])
         }
 
-        // Page indicators
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            repeat(pages.size) { index ->
-                val isSelected = pagerState.currentPage == index
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(if (isSelected) 8.dp else 6.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isSelected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outlineVariant
-                        ),
-                )
-            }
-        }
-
-        // Bottom buttons
-        Row(
+        // Bottom section: indicators + button
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 28.dp)
-                .padding(bottom = 36.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(bottom = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (pagerState.currentPage < pages.size - 1) {
-                TextButton(onClick = {
-                    Haptics.click()
-                    onFinished()
-                }) {
-                    Text("Skip", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // Page indicators
+            Row(
+                modifier = Modifier.padding(bottom = 20.dp),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                repeat(pages.size) { index ->
+                    val isSelected = pagerState.currentPage == index
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(if (isSelected) 8.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outlineVariant
+                            ),
+                    )
                 }
-            } else {
-                Spacer(modifier = Modifier.width(48.dp))
             }
 
+            // Single full-width button
             TouchLockButton(
-                text = if (pagerState.currentPage < pages.size - 1) "Next" else "Get Started",
+                text = if (isLastPage) "Get Started" else "Next",
                 onClick = {
                     Haptics.click()
-                    if (pagerState.currentPage < pages.size - 1) {
-                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                    } else {
+                    if (isLastPage) {
                         onFinished()
+                    } else {
+                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                     }
                 },
-                modifier = Modifier.weight(1f),
-                height = 48.dp,
+                modifier = Modifier.fillMaxWidth(),
+                height = 52.dp,
             )
         }
     }
@@ -151,13 +159,14 @@ private fun OnboardingPageContent(page: OnboardingPage) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
+            .padding(horizontal = 28.dp)
+            .padding(top = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
+        // Icon
         Box(
             modifier = Modifier
-                .size(80.dp)
+                .size(72.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
@@ -166,51 +175,60 @@ private fun OnboardingPageContent(page: OnboardingPage) {
                 page.icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(36.dp),
             )
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
+        // Title
         Text(
             text = page.title,
-            fontSize = 22.sp,
+            fontSize = 24.sp,
             fontWeight = FontWeight.ExtraBold,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
+        // Description
         Text(
             text = page.description,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            lineHeight = 20.sp,
+            lineHeight = 21.sp,
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        page.bullets.forEach { bullet ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    Icons.Filled.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = bullet,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+        // Bullets — left aligned in a card
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            page.bullets.forEach { bullet ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Text(
+                        text = bullet,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
         }
     }
