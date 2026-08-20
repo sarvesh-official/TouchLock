@@ -65,7 +65,7 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Last updated: August 2026",
+                text = "Last updated: August 2025",
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
