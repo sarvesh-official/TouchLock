@@ -35,9 +35,9 @@ fun OnboardingScreen(
             title = "Welcome to BudFreeze",
             description = "Lock and unlock touch controls on your earbuds directly from your phone. No more accidental taps while working out or sleeping.",
             bullets = listOf(
-                "Works with Realme Buds, Nord Buds, OnePlus Buds, and OPPO Enco",
-                "Free and open source",
-                "No ads, no tracking, no data collection",
+                "Works with Realme Buds, OnePlus Buds, Nord Buds, and OPPO Enco",
+                "Free and open source, no ads, no tracking",
+                "Community-driven device support",
             ),
         ),
         OnboardingPage(

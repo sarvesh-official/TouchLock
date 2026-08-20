@@ -12,6 +12,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -113,6 +114,7 @@ class MainActivity : ComponentActivity() {
     private var showHelp by mutableStateOf(false)
     private var permissionDenied by mutableStateOf(false)
     private var isBeeping by mutableStateOf(false)
+    private var unknownDeviceReport by mutableStateOf<String?>(null)
     private var beepJob: kotlinx.coroutines.Job? = null
     private lateinit var supporterBilling: SupporterBilling
 
@@ -261,6 +263,42 @@ class MainActivity : ComponentActivity() {
                         onBack = { showFindNearby = false },
                     )
                 } else {
+                    // Unknown device report dialog
+                    unknownDeviceReport?.let { deviceName ->
+                        val brand = DeviceCatalog.guessBrand(deviceName)
+                        AlertDialog(
+                            onDismissRequest = { unknownDeviceReport = null },
+                            title = { Text("New Device Detected", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp) },
+                            text = {
+                                Text(
+                                    "Your \"$deviceName\" works with BudFreeze but isn't in our catalog yet.\n\nReport it to help other users with the same earbuds find this app?",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    val url = "https://github.com/sarvesh-official/BudFreeze/issues/new?labels=device-report&title=Device+works:+$deviceName&body=Bluetooth+name:+$deviceName%0ABrand:+$brand%0AStatus:+Works+with+BudFreeze"
+                                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                    DeviceCatalog.addUserVerifiedDevice(this@MainActivity, deviceName, brand)
+                                    unknownDeviceReport = null
+                                }) {
+                                    Text("Report", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = {
+                                    DeviceCatalog.addUserVerifiedDevice(this@MainActivity, deviceName, brand)
+                                    unknownDeviceReport = null
+                                }) {
+                                    Text("Not now", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                                }
+                            },
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+
                     TouchLockScreen(
                         statusMessage = statusMessage,
                         leftLocked = leftLocked,
@@ -512,6 +550,13 @@ class MainActivity : ComponentActivity() {
                 TouchLockTileService.requestListening(this@MainActivity)
                 updateStatusMessage()
                 isBusy = false
+
+                // Check if this is an unknown device that works — prompt to report
+                if (!DeviceCatalog.isKnownDevice(device) &&
+                    !DeviceCatalog.hasUserVerifiedDevice(this@MainActivity, device)) {
+                    unknownDeviceReport = device
+                }
+
                 // Query battery in background — don't block the UI
                 launch {
                     val batt = budsConnection.queryBattery()

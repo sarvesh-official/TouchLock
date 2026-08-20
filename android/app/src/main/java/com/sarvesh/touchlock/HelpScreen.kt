@@ -78,39 +78,76 @@ fun HelpScreen(
                 title = "Supported Earbuds",
             ) {
                 Text(
-                    "BudFreeze works with earbuds that use the OPO Bluetooth protocol:",
+                    "BudFreeze works with earbuds that use the OPO Bluetooth protocol. Here are the known supported models:",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                listOf(
-                    "Realme Buds (all models)",
-                    "Realme Buds Air (all generations)",
-                    "OnePlus Nord Buds (all models)",
-                    "OnePlus Buds",
-                    "OPPO Enco (all models)",
-                ).forEach { device ->
-                    Row(
-                        modifier = Modifier.padding(vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Filled.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            device,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val byBrand = DeviceCatalog.getKnownDevicesByBrand()
+                byBrand.forEach { (brand, models) ->
+                    Text(
+                        text = brand,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                    )
+                    models.forEach { model ->
+                        Row(
+                            modifier = Modifier.padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Filled.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                model.name,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 }
+
+                // User-verified devices
+                val userVerified = DeviceCatalog.getUserVerifiedDevices(context)
+                if (userVerified.isNotEmpty()) {
+                    Text(
+                        text = "User-Verified",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                    )
+                    userVerified.forEach { device ->
+                        Row(
+                            modifier = Modifier.padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Filled.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "${device.name} (${device.brand})",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "If your earbuds aren't listed, they may not be compatible. BudFreeze uses a specific Bluetooth protocol that only works with these brands.",
+                    "New models are added as users report them working. If your earbuds aren't listed, try using BudFreeze — they might work! If they do, report it to help other users.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
