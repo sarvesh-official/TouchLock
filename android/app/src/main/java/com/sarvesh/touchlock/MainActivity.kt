@@ -1028,12 +1028,12 @@ fun TouchLockScreen(
                         pendingLock = null
                     }
                 ) {
-                    Text("LOCK", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                    Text("LOCK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingLock = null }) {
-                    Text("CANCEL", fontWeight = FontWeight.Bold)
+                    Text("CANCEL", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -1253,8 +1253,8 @@ private fun ControlRow(
             onCheckedChange = { onToggle() },
             enabled = enabled,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.surface,
-                checkedTrackColor = MaterialTheme.colorScheme.onSurface,
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
                 uncheckedThumbColor = MaterialTheme.colorScheme.surface,
                 uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
             ),
