@@ -1,10 +1,10 @@
 # BudFreeze — Play Store Listing
 
 ## App Name (max 30 chars)
-BudFreeze — Lock Earbud Touch
+BudFreeze
 
 ## Short Description (max 80 chars)
-Lock and unlock touch controls on Realme, OnePlus, and OPPO earbuds
+Lock and unlock touch controls on your Bluetooth earbuds
 
 ## Full Description (max 4000 chars)
 BudFreeze lets you lock and unlock touch controls on your Bluetooth earbuds directly from your phone. No more accidental taps while working out, sleeping, or adjusting your earbuds.
