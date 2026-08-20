@@ -1,5 +1,6 @@
 package com.sarvesh.touchlock
 
+import android.bluetooth.BluetoothAdapter
 import android.content.ComponentName
 import android.graphics.drawable.Icon
 import android.service.quicksettings.Tile
@@ -83,6 +84,15 @@ class TouchLockTileService : TileService() {
         super.onClick()
         Log.d(TAG, "Tile clicked")
 
+        val btAdapter = BluetoothAdapter.getDefaultAdapter()
+        if (btAdapter == null || !btAdapter.isEnabled) {
+            Haptics.init(this)
+            Haptics.error()
+            updateTileUnavailable("Bluetooth off")
+            Log.w(TAG, "Tile clicked but Bluetooth is off")
+            return
+        }
+
         val leftLocked = TouchLockState.leftLocked.value
         val rightLocked = TouchLockState.rightLocked.value
         // If either is unlocked, lock both. If both locked, restore both.
@@ -126,10 +136,28 @@ class TouchLockTileService : TileService() {
             Log.w(TAG, "qsTile is null")
             return
         }
+
+        val btAdapter = BluetoothAdapter.getDefaultAdapter()
+        if (btAdapter == null || !btAdapter.isEnabled) {
+            updateTileUnavailable("Bluetooth off")
+            return
+        }
+
+        val connected = TouchLockState.connected.value
         val leftLocked = TouchLockState.leftLocked.value
         val rightLocked = TouchLockState.rightLocked.value
         val bothLocked = leftLocked && rightLocked
         val anyLocked = leftLocked || rightLocked
+
+        if (!connected) {
+            tile.state = Tile.STATE_UNAVAILABLE
+            tile.label = "BudFreeze"
+            tile.contentDescription = "Earbuds not connected"
+            tile.icon = Icon.createWithResource(this, R.drawable.ic_touch_lock_off)
+            tile.updateTile()
+            Log.d(TAG, "Tile updated → disconnected")
+            return
+        }
 
         tile.state = if (bothLocked) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         tile.label = "BudFreeze"
@@ -145,7 +173,7 @@ class TouchLockTileService : TileService() {
             if (anyLocked) R.drawable.ic_touch_lock else R.drawable.ic_touch_lock_off
         )
         tile.updateTile()
-        Log.d(TAG, "Tile updated → L=$leftLocked R=$rightLocked")
+        Log.d(TAG, "Tile updated → connected L=$leftLocked R=$rightLocked")
     }
 
     private fun updateTileConnecting(targetState: Boolean) {
@@ -156,6 +184,14 @@ class TouchLockTileService : TileService() {
             this,
             if (targetState) R.drawable.ic_touch_lock else R.drawable.ic_touch_lock_off
         )
+        tile.updateTile()
+    }
+
+    private fun updateTileUnavailable(label: String) {
+        val tile = qsTile ?: return
+        tile.state = Tile.STATE_UNAVAILABLE
+        tile.label = label
+        tile.icon = Icon.createWithResource(this, R.drawable.ic_touch_lock_off)
         tile.updateTile()
     }
 }

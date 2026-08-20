@@ -301,15 +301,20 @@ class MainActivity : ComponentActivity() {
                     BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED,
                     BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED -> {
                         detectDeviceDebounced()
+                        TouchLockTileService.requestListening(this@MainActivity)
                     }
                     BluetoothAdapter.ACTION_STATE_CHANGED -> {
                         val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
-                        if (state == BluetoothAdapter.STATE_ON) detectDeviceDebounced()
+                        if (state == BluetoothAdapter.STATE_ON) {
+                            detectDeviceDebounced()
+                            TouchLockTileService.requestListening(this@MainActivity)
+                        }
                         else if (state == BluetoothAdapter.STATE_OFF) {
                             detectJob?.cancel()
                             TouchLockState.setConnected(false)
                             TouchLockState.clearAvailableDevices()
                             statusMessage = "Bluetooth is off"
+                            TouchLockTileService.requestListening(this@MainActivity)
                         }
                     }
                 }
