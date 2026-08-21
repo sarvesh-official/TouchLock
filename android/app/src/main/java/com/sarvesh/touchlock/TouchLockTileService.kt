@@ -113,6 +113,8 @@ class TouchLockTileService : TileService() {
             val deviceName = connection.sendFrames(frames)
 
             if (deviceName != null) {
+                TouchLockState.init(this@TouchLockTileService)
+                TouchLockState.setConnected(true)
                 TouchLockState.setBothLocked(this@TouchLockTileService, newLocked)
                 TouchLockState.setLastDevice(this@TouchLockTileService, deviceName)
                 Haptics.success()
@@ -149,13 +151,15 @@ class TouchLockTileService : TileService() {
         val bothLocked = leftLocked && rightLocked
         val anyLocked = leftLocked || rightLocked
 
+        // When disconnected, show as INACTIVE (tappable) not UNAVAILABLE (disabled)
+        // so the user can tap to attempt a connection
         if (!connected) {
-            tile.state = Tile.STATE_UNAVAILABLE
+            tile.state = Tile.STATE_INACTIVE
             tile.label = "BudFreeze"
-            tile.contentDescription = "Earbuds not connected"
+            tile.contentDescription = "Tap to connect and lock earbuds"
             tile.icon = Icon.createWithResource(this, R.drawable.ic_touch_lock_off)
             tile.updateTile()
-            Log.d(TAG, "Tile updated → disconnected")
+            Log.d(TAG, "Tile updated → disconnected (tappable)")
             return
         }
 
